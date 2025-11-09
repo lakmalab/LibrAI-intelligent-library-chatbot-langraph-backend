@@ -9,5 +9,6 @@ class AgentState(TypedDict):
 
     session_id: str
     conversation_id: Optional[int]
+    intent: Optional[str]
 
     response: str
