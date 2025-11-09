@@ -4,6 +4,7 @@ class ChatService:
         pass
 
     async def process_chat_message(self, request):
+
         return {
             "conversation_id": 1,
             "response": "hi there",

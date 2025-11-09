@@ -1,6 +1,7 @@
-from app.enums.ai_model import AiModel
-from app.enums.role import RoleType
-from app.enums.scheme import SchemeType
+from src.enums.ai_model import AiModel
+from src.enums.role import RoleType
 
-__all__ = ["SchemeType", "RoleType", "AiModel"]
+
+__all__ = ["RoleType", "AiModel"]
+
 
