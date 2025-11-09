@@ -1,6 +1,9 @@
 from functools import lru_cache
-from pydantic import field_validator
 from pydantic_settings import BaseSettings
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+ENV_FILE = PROJECT_ROOT / ".env"
 
 class Settings(BaseSettings):
     APP_NAME: str = "LibrAI – The Intelligent National Library Chat Assistant"
@@ -13,7 +16,7 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    DATABASE_URL: str
+    DATABASE_URL: str  = "mysql+pymysql://root:1234@localhost:3306/librelibraryassistant"
 
     SESSION_EXPIRE_HOURS: int
     OPENAI_API_KEY:str
@@ -22,7 +25,7 @@ class Settings(BaseSettings):
 
 
     class Config:
-        env_file = ".env"
+        env_file = ENV_FILE
         env_file_encoding = "utf-8"
         case_sensitive = True
 
