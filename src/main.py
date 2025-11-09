@@ -1,10 +1,8 @@
-import os
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import settings
-from app.api.routes.v1 import session, chat
+from src.utils.config import settings
 
 app = FastAPI(
     docs_url="/docs",
@@ -20,6 +18,7 @@ app.add_middleware(
 )
 
 if __name__ == "__main__":
+
     uvicorn.run(
         "main:app",
         host=settings.HOST,
@@ -31,7 +30,7 @@ if __name__ == "__main__":
 @app.get("/")
 async def root():
     return {
-        "message": f"API is running",
+        "message": f"{settings.APP_NAME} API is running",
         "status": "healthy",
         "debug_mode": settings.DEBUG
     }
