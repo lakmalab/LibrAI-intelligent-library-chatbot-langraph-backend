@@ -1,0 +1,27 @@
+[project]
+name = "librai-intelligent-library-chatbot-langraph-backend"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "chromadb>=1.1.1",
+    "cryptography>=46.0.2",
+    "fastapi[all]>=0.100.0",
+    "ipython>=9.6.0",
+    "langchain>=0.3.27",
+    "langchain-community>=0.3.30",
+    "langchain-core>=0.3.77",
+    "langchain-openai>=0.3.34",
+    "langchain-text-splitters>=0.3.11",
+    "langgraph>=0.6.8",
+    "openai>=2.0.1",
+    "psycopg2-binary>=2.9.10",
+    "pydantic>=2.0.0",
+    "pydantic-core>=2.33.2",
+    "pydantic-settings>=2.11.0",
+    "pymysql>=1.1.2",
+    "pypdf>=6.1.1",
+    "python-dotenv>=1.1.1",
+    "sqlalchemy>=2.0.43",
+    "uvicorn>=0.37.0",
+]
