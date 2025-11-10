@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Dict, Any
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
@@ -11,7 +12,7 @@ from src.enums.ai_model import AiModel
 from src.utils.logger import get_logger
 
 logger = get_logger("intent_router_node")
-def intent_router_node(state: AgentState) -> AgentState:
+def intent_router_node(state: AgentState) -> Dict[str, Any]:
 
     llm = get_llm(temperature=0, model=AiModel.GPT_5_NANO)
 
@@ -27,8 +28,7 @@ def intent_router_node(state: AgentState) -> AgentState:
 
     messages = [
         SystemMessage(content=formatted_system_prompt),
-        *conversation_history,
-        HumanMessage(content=user_message)
+        *conversation_history
     ]
 
     response = llm.invoke(messages)
@@ -38,7 +38,7 @@ def intent_router_node(state: AgentState) -> AgentState:
         HumanMessage(content=user_message),
         AIMessage(content=response.content)
     ]
-    state["messages"] = new_messages
+
     try:
         result = json.loads(response.content)
         intent = result.get("intent", "other").strip().lower()
@@ -46,7 +46,10 @@ def intent_router_node(state: AgentState) -> AgentState:
         logger.error(f"Intent classification failed: {e}")
         intent = "other"
 
-    state["intent"] = intent
-    state["response"] = result.get("reasoning", "other").strip().lower()
     logger.info(f"[IntentClassifier] detected intent: {intent}")
-    return state
+
+    return {
+        "intent": intent,
+        "response": result.get("reasoning", "other").strip().lower(),
+        "messages": new_messages
+    }

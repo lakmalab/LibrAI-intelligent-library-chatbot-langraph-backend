@@ -1,7 +1,12 @@
+from typing import Dict, Any
+
 from fastapi import Depends
 
+from src.agents import prompt_templates
 from src.agents.graph import build_graph
 from src.database.dbconnection import get_db
+from src.enums import RoleType
+from src.models.entities import ChatMessage
 from src.models.entities.session import Session
 from src.repositories.chat_repository import ChatRepository
 from src.repositories.conversation_repository import ConversationRepository
@@ -40,6 +45,7 @@ class ChatService:
             "user_query": request.message,
             "session_id": request.session_id,
             "conversation_id": conversation.id,
+            "db_schema": prompt_templates.DB_SCHEMA
         }
 
         result = await self.agent.ainvoke(agent_state, config=thread_config)
@@ -49,6 +55,18 @@ class ChatService:
         response_text = result.get("response", "I'm sorry, I couldn't process that.")
         intent = result.get("intent")
 
+        self.save_message(
+            conversation_id=conversation.id,
+            role=RoleType.USER,
+            content=request.message
+        )
+        self.save_message(
+            conversation_id=conversation.id,
+            role=RoleType.ASSISTANT,
+            content=response_text,
+            intent=intent
+        )
+
         return ChatMessageResponse(
             conversation_id=conversation.id,
             response=response_text,
@@ -56,6 +74,24 @@ class ChatService:
             metadata={"request": request.model_dump()}
         )
 
+    def save_message(
+            self,
+            conversation_id: int,
+            role: RoleType,
+            content: str,
+            intent: str = None,
+            metadata: Dict[str, Any] = None
+    ) -> ChatMessage:
+        message = ChatMessage(
+            conversation_id=conversation_id,
+            role=role,
+            content=content,
+            intent=intent,
+            metadata=metadata
+        )
+        self.chat_repo.save_message(message)
+
+        return message
 
 _chat_service_instance = None
 

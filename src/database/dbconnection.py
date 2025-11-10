@@ -1,6 +1,6 @@
 from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.ext.declarative import declarative_base
 
 from src.utils.config import settings
@@ -17,6 +17,41 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def get_table_info():
+    """
+    i created this function to get table info to populate state["db_schema"] but since
+    it could not get relationships info, it is not used for now. instead i hardcoded
+    the schema in prompt_template.Db_schema. so this can be removed later if not needed.
+    """
+    inspector = inspect(engine)
+    try:
+        table_names = inspector.get_table_names()
+        schema_info = {}
+
+        for table_name in table_names:
+            columns_info = inspector.get_columns(table_name)
+
+            schema_info[table_name] = []
+            for column in columns_info:
+                col_details = {
+                    "name": column['name'],
+                    "type": str(column['type']),
+                    "nullable": column['nullable'],
+                    "default": column.get('default'),
+                    "primary_key": column.get('primary_key', False)
+                }
+                schema_info[table_name].append(col_details)
+
+        return {
+            "database_schema": schema_info,
+            "total_tables": len(table_names),
+            "table_names": table_names
+        }
+    except Exception as e:
+        return {"error": f"Failed to get database schema: {str(e)}"}
+
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
