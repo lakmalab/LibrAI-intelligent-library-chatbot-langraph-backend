@@ -9,6 +9,7 @@ from src.schemas.chat import ChatMessageResponse
 from src.utils.logger import get_logger
 
 logger = get_logger("chat_service")
+
 class ChatService:
 
     def __init__(self, db: Session):
@@ -27,21 +28,24 @@ class ChatService:
                 })
         except Exception as e:
             logger.error(e)
+            raise e
 
         thread_config = {
             "configurable": {
                 "thread_id": f"{request.session_id}_conv_{conversation.id}"
             }
         }
+
         agent_state = {
             "user_query": request.message,
             "session_id": request.session_id,
             "conversation_id": conversation.id,
-            "messages": [],
         }
 
         result = await self.agent.ainvoke(agent_state, config=thread_config)
-        logger.info("result:",result)
+
+        logger.info(f"Final message count: {len(result.get('messages', []))}")
+
         response_text = result.get("response", "I'm sorry, I couldn't process that.")
         intent = result.get("intent")
 
@@ -52,5 +56,11 @@ class ChatService:
             metadata={"request": request.model_dump()}
         )
 
+
+_chat_service_instance = None
+
 def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
-    return ChatService(db)
+    global _chat_service_instance
+    if _chat_service_instance is None:
+        _chat_service_instance = ChatService(db)
+    return _chat_service_instance
