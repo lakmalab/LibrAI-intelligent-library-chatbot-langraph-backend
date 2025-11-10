@@ -1,5 +1,3 @@
-import logging
-
 from fastapi import Depends
 
 from src.agents.graph import build_graph
@@ -7,6 +5,7 @@ from src.database.dbconnection import get_db
 from src.models.entities.session import Session
 from src.repositories.chat_repository import ChatRepository
 from src.repositories.conversation_repository import ConversationRepository
+from src.schemas.chat import ChatMessageResponse
 from src.utils.logger import get_logger
 
 logger = get_logger("chat_service")
@@ -18,7 +17,7 @@ class ChatService:
         self.conversation_repo = ConversationRepository(db)
         self.agent = build_graph()
 
-    async def process_chat_message(self, request):
+    async def process_chat_message(self, request) -> ChatMessageResponse:
         try:
             conversation = self.conversation_repo.get_conversation_by_session_id(request.session_id)
             if conversation is None:
@@ -42,18 +41,16 @@ class ChatService:
         }
 
         result = await self.agent.ainvoke(agent_state, config=thread_config)
+        logger.info("result:",result)
         response_text = result.get("response", "I'm sorry, I couldn't process that.")
         intent = result.get("intent")
 
-        return {
-            "conversation_id": 1,
-            "response": response_text,
-            "intent": intent,
-            "metadata": {
-               "request": request
-            }
-        }
-
+        return ChatMessageResponse(
+            conversation_id=conversation.id,
+            response=response_text,
+            intent=intent,
+            metadata={"request": request.model_dump()}
+        )
 
 def get_chat_service(db: Session = Depends(get_db)) -> ChatService:
     return ChatService(db)

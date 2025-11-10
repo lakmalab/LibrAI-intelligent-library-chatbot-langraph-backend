@@ -3,8 +3,9 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from src.agents.nodes.intent_router_node import intent_router_node
 from src.agents.state import AgentState
+from src.utils.logger import get_logger
 
-
+logger = get_logger("build_graph")
 def build_graph():
     workflow = StateGraph(AgentState)
 

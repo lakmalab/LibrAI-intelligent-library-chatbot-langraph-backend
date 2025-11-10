@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic_core._pydantic_core import ValidationError
+from pydantic import ValidationError
 
 from src.schemas.chat import ChatMessageResponse, ChatMessageRequest
 from src.services.chat_service import ChatService, get_chat_service
@@ -18,19 +18,18 @@ class ChatController:
         self.router.post("/message", response_model=ChatMessageResponse)(self.send_message)
 
     async def send_message(
-            self,request: ChatMessageRequest,chat_service: ChatService = Depends(get_chat_service)
+            self,request: ChatMessageRequest,
+            chat_service: ChatService = Depends(get_chat_service)
     ) -> ChatMessageResponse:
+
         try:
-
             result = await chat_service.process_chat_message(request)
-            logger.info(f"Successfully processed message for session: {result}")
-
-            return ChatMessageResponse(
-                conversation_id=result["conversation_id"],
-                response=result["response"],
-                intent=result.get("intent"),
-                metadata=result.get("metadata", {})
+            logger.info(
+                f"Successfully processed message for session: {request.session_id}, "
+                f"conversation: {result.conversation_id}"
             )
+
+            return result
 
         except ValidationError as e:
             error_msg = f"Invalid request data: {str(e)}"

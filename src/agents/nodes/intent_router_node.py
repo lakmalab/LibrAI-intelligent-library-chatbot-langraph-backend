@@ -8,9 +8,11 @@ from src.agents import prompt_templates
 from src.agents.llm_provider import get_llm
 from src.agents.state import AgentState
 from src.enums.ai_model import AiModel
+from src.utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("intent_router_node")
 def intent_router_node(state: AgentState) -> AgentState:
+
     llm = get_llm(temperature=0, model=AiModel.GPT_5_NANO)
 
     conversation_history = state.get("messages", [])
@@ -26,7 +28,7 @@ def intent_router_node(state: AgentState) -> AgentState:
     messages = [
         SystemMessage(content=formatted_system_prompt),
         *conversation_history,
-        HumanMessage(content='Return output ONLY as valid JSON in this format: {"intent": "intent_name"}')
+        HumanMessage(content='')
     ]
 
     response = llm.invoke(messages)
@@ -40,5 +42,6 @@ def intent_router_node(state: AgentState) -> AgentState:
         intent = "other"
 
     state["intent"] = intent
+    state["response"] = result.get("reasoning", "other").strip().lower()
     logger.info(f"[IntentClassifier] detected intent: {intent}")
     return state
