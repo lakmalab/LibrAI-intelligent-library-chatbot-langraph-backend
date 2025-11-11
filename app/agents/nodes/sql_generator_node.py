@@ -2,9 +2,7 @@ import json
 from typing import Dict, Any
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-from langchain_core.prompts import PromptTemplate
 
-from app.agents import prompt_templates
 from app.agents.llm_provider import get_llm
 from app.agents.prompts.registry import PROMPTS
 from app.agents.state import AgentState
@@ -20,30 +18,28 @@ def sql_generator_node(state: AgentState) -> Dict[str, Any]:
 
     conversation_history = state.get("messages", [])
     user_message = state.get("user_query", "")
-    db_schema = state.get("db_schema")
 
-    schema_freshly_loaded = False
+    db_schema = state.get("db_schema")
+    schema_sent_once = state.get("schema_sent_once", False)
 
     if not db_schema:
         try:
             db_schema = get_table_info()
-            schema_text = json.dumps(db_schema, indent=2)
-            schema_freshly_loaded = True
-
-            if isinstance(db_schema, dict):
-                logger.info(f"Schema freshly loaded with {len(db_schema)} tables.")
-
+            logger.info(f"Schema freshly loaded with {len(db_schema)} tables.")
         except Exception as e:
             logger.error(f"sql_generator_node failed to get db_schema: {e}")
             return {
                 "db_schema": "",
                 "response": f"sql_generator_node failed to get db_schema: {e}"
             }
-    else:
-        schema_text = json.dumps(db_schema, indent=2) if isinstance(db_schema, dict) else str(db_schema)
-        logger.info("Using cached schema from state.")
 
-    system_prompt = PROMPTS.get("sql_generator", query=user_message, db_schema=schema_text)
+    if not schema_sent_once:
+        schema_text = json.dumps(db_schema, indent=2)
+        system_prompt = PROMPTS.get("sql_generator", query=user_message, db_schema=schema_text)
+        logger.info("Sending full schema to GPT for the first time.")
+    else:
+        system_prompt = PROMPTS.get("sql_generator", query=user_message, db_schema="(Schema already provided in context)")
+        logger.info("schema in prompt (already known to GPT).")
 
     messages = [
         SystemMessage(content=system_prompt),
@@ -59,8 +55,7 @@ def sql_generator_node(state: AgentState) -> Dict[str, Any]:
     ]
 
     try:
-        sql_query = response.content.strip()
-        sql_query = sql_query.replace('```sql', '').replace('```', '').strip()
+        sql_query = response.content.strip().replace('```sql', '').replace('```', '').strip()
     except Exception as e:
         logger.error(f"sql_generator_node failed: {e}")
         sql_query = ""
@@ -71,5 +66,6 @@ def sql_generator_node(state: AgentState) -> Dict[str, Any]:
         "db_schema": db_schema,
         "sql_query": sql_query,
         "response": sql_query,
-        "messages": new_messages
+        "messages": new_messages,
+        "schema_sent_once": True
     }
