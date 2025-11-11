@@ -16,7 +16,7 @@ def intent_router_node(state: AgentState) -> Dict[str, Any]:
     conversation_history = state.get("messages", [])
     user_message = state.get("user_query", "")
     system_prompt = PROMPTS.get("intent_router", query=user_message)
-
+    logger.info("messages history: ",len(conversation_history))
     messages = [
         SystemMessage(content=system_prompt),
         *conversation_history
