@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from app.agents import prompt_templates
 from app.agents.graph import build_graph
-from app.db.dbconnection import get_db
+from app.db.dbconnection import get_db, get_table_info
 from app.enums import RoleType
 from app.models import ChatMessage
 from app.models.session import Session
@@ -45,12 +45,11 @@ class ChatService:
             "user_query": request.message,
             "session_id": request.session_id,
             "conversation_id": conversation.id,
-            "db_schema": prompt_templates.DB_SCHEMA
         }
 
         result = await self.agent.ainvoke(agent_state, config=thread_config)
 
-        logger.info(f"Final message count: {len(result.get('messages', []))}")
+        #logger.info(f"Final message : {result}")
 
         response_text = result.get("response", "I'm sorry, I couldn't process that.")
         intent = result.get("intent")

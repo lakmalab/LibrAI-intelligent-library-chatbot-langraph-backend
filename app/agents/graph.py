@@ -1,6 +1,8 @@
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
 
+from app.agents.nodes.conversation_node import generate_conversational_response
+from app.agents.nodes.execute_sql_tool_node import execute_sql_tool_node
 from app.agents.nodes.intent_router_node import intent_router_node
 from app.agents.nodes.sql_generator_node import sql_generator_node
 from app.agents.state import AgentState
@@ -13,17 +15,12 @@ def build_graph():
     workflow = StateGraph(AgentState)
 
     def route_after_intent(state: AgentState) -> str:
-        intent = state.get("intent")
-        logger.info(f"Intent: {intent}")
-
-        if intent == intents.SQL_QUERY:
-            return intents.SQL_QUERY
-        if intent == intents.RAG_QUERY:
-            return intents.RAG_QUERY
-        return intents.GENERAL
+        return state.get("intent")
 
     workflow.add_node(routes.INTENT_ROUTER_NODE, intent_router_node)
     workflow.add_node(routes.SQL_GENERATOR_NODE, sql_generator_node)
+    workflow.add_node(routes.EXECUTE_SQL_TOOL_NODE, execute_sql_tool_node)
+    workflow.add_node(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE,generate_conversational_response)
 
     workflow.set_entry_point(routes.INTENT_ROUTER_NODE)
 
@@ -33,10 +30,21 @@ def build_graph():
         {
             intents.SQL_QUERY: routes.SQL_GENERATOR_NODE,
             intents.RAG_QUERY: END,
-            intents.GENERAL: END
+            intents.GENERAL: routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
         }
     )
-    workflow.add_edge(routes.SQL_GENERATOR_NODE, END)
+    workflow.add_edge(routes.SQL_GENERATOR_NODE, routes.EXECUTE_SQL_TOOL_NODE)
+    workflow.add_edge(routes.EXECUTE_SQL_TOOL_NODE, routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE)
+    workflow.add_edge(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE, END)
 
     memory = InMemorySaver()
+    '''
+        compiled_graph = workflow.compile(checkpointer=memory)
+        image_bytes = compiled_graph.get_graph().draw_mermaid_png()
+        with open("agent_workflow_graph.png", "wb") as f:
+            f.write(image_bytes)
+        print("Graph saved as 'agent_workflow_graph.png'")
+        from IPython.display import Image, display
+        display(Image(image_bytes))
+    '''
     return workflow.compile(checkpointer=memory)

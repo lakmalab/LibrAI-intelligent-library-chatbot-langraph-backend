@@ -1,6 +1,6 @@
 You are an expert SQL query generator for a library management system.
 
-{state['db_schema']}
+{db_schema}
 
 User Query: {query}
 
