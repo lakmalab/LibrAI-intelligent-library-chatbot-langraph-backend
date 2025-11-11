@@ -1,6 +1,7 @@
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
 
+from app.agents.nodes.execute_sql_tool_node import execute_sql_tool_node
 from app.agents.nodes.intent_router_node import intent_router_node
 from app.agents.nodes.sql_generator_node import sql_generator_node
 from app.agents.state import AgentState
@@ -24,6 +25,7 @@ def build_graph():
 
     workflow.add_node(routes.INTENT_ROUTER_NODE, intent_router_node)
     workflow.add_node(routes.SQL_GENERATOR_NODE, sql_generator_node)
+    workflow.add_node(routes.EXECUTE_SQL_TOOL_NODE, execute_sql_tool_node)
 
     workflow.set_entry_point(routes.INTENT_ROUTER_NODE)
 
@@ -36,7 +38,17 @@ def build_graph():
             intents.GENERAL: END
         }
     )
-    workflow.add_edge(routes.SQL_GENERATOR_NODE, END)
+    workflow.add_edge(routes.SQL_GENERATOR_NODE, routes.EXECUTE_SQL_TOOL_NODE)
+    workflow.add_edge(routes.EXECUTE_SQL_TOOL_NODE, END)
 
     memory = InMemorySaver()
+    '''
+            compiled_graph = workflow.compile(checkpointer=memory)
+            image_bytes = compiled_graph.get_graph().draw_mermaid_png()
+            with open("agent_workflow_graph.png", "wb") as f:
+                f.write(image_bytes)
+            print("Graph saved as 'agent_workflow_graph.png'")
+            from IPython.display import Image, display
+            display(Image(image_bytes))
+        '''
     return workflow.compile(checkpointer=memory)

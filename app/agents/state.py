@@ -18,3 +18,4 @@ class AgentState(TypedDict):
 
     db_schema: str
     sql_query:str
+    tool_results: str
