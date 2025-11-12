@@ -1,26 +1,42 @@
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
-
 from app.agents.nodes.conversation_node import generate_conversational_response
-from app.agents.nodes.execute_sql_tool_node import execute_sql_tool_node
 from app.agents.nodes.intent_router_node import intent_router_node
-from app.agents.nodes.sql_generator_node import sql_generator_node
+from app.agents.nodes.tool_caller_node import ToolCallerNode
 from app.agents.state import AgentState
+from app.agents.tools.execute_dynamic_sql_query_tool import QueryExecutorTool
+
+from app.agents.tools.sql_generator_tool import SQLGeneratorTool
 from app.core.logger import get_logger
 from app.enums.intent import intents
 from app.enums.routes import routes
+from app.enums.tool_call import toolcall
 
 logger = get_logger("build_graph")
 def build_graph():
     workflow = StateGraph(AgentState)
 
+    tools = [
+        SQLGeneratorTool(),
+        QueryExecutorTool(),
+    ]
+
+    tool_caller_node = ToolCallerNode(tools)
+
     def route_after_intent(state: AgentState) -> str:
         return state.get("intent")
 
+    def route_after_tool_call(state: AgentState) -> str:
+        next_tool_call = state.get("tool_call")
+
+        if next_tool_call == toolcall.SQL_QUERY_EXECUTE:
+            return routes.TOOL_CALLER_NODE
+        else:
+            return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
+
     workflow.add_node(routes.INTENT_ROUTER_NODE, intent_router_node)
-    workflow.add_node(routes.SQL_GENERATOR_NODE, sql_generator_node)
-    workflow.add_node(routes.EXECUTE_SQL_TOOL_NODE, execute_sql_tool_node)
     workflow.add_node(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE,generate_conversational_response)
+    workflow.add_node(routes.TOOL_CALLER_NODE, tool_caller_node)
 
     workflow.set_entry_point(routes.INTENT_ROUTER_NODE)
 
@@ -28,13 +44,19 @@ def build_graph():
         routes.INTENT_ROUTER_NODE,
         route_after_intent,
         {
-            intents.SQL_QUERY: routes.SQL_GENERATOR_NODE,
-            intents.RAG_QUERY: END,
+            intents.SQL_QUERY: routes.TOOL_CALLER_NODE,
+            intents.RAG_QUERY: routes.TOOL_CALLER_NODE,
             intents.GENERAL: routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
         }
     )
-    workflow.add_edge(routes.SQL_GENERATOR_NODE, routes.EXECUTE_SQL_TOOL_NODE)
-    workflow.add_edge(routes.EXECUTE_SQL_TOOL_NODE, routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE)
+    workflow.add_conditional_edges(
+        routes.TOOL_CALLER_NODE,
+        route_after_tool_call,
+        {
+            routes.TOOL_CALLER_NODE: routes.TOOL_CALLER_NODE,  # Continue tool chain
+            routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE: routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
+        }
+    )
     workflow.add_edge(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE, END)
 
     memory = InMemorySaver()

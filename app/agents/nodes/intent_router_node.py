@@ -7,6 +7,7 @@ from app.agents.prompts.registry import PROMPTS
 from app.agents.state import AgentState
 from app.enums.ai_model import AiModel
 from app.core.logger import get_logger
+from app.enums.tool_call import toolcall
 
 logger = get_logger("intent_router_node")
 def intent_router_node(state: AgentState) -> Dict[str, Any]:
@@ -42,6 +43,7 @@ def intent_router_node(state: AgentState) -> Dict[str, Any]:
 
     return {
         "intent": intent,
+        "tool_call": toolcall.SQL_QUERY_GENERATE ,
         "response": result.get("reasoning", "other").strip().lower(),
         "messages": new_messages
     }

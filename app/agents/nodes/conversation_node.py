@@ -40,7 +40,6 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
                 query=user_message,
                 query_result=query_result_text
             )
-            logger.info(f"system_prompt: {system_prompt}")
             messages = [
                 SystemMessage(content=system_prompt),
                 *conversation_history
