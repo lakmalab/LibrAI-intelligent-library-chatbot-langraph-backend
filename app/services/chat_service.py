@@ -198,6 +198,34 @@ class ChatService:
 
         return message
 
+    async def get_user_conversations(self, session_id):
+        try:
+            conversations = self.conversation_repo.get_conversations_by_session_id(session_id)
+            if conversations is None:
+                conversations = self.conversation_repo.create_conversation({
+                    "session_id": session_id,
+                    "title": "New Conversation"
+                })
+
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+        conversations_object = {
+            "session_id": session_id,
+            "conversations": [
+                {
+                    "id": conv.id,
+                    "title": conv.title,
+                    "created_at": conv.created_at,
+                    "updated_at": conv.updated_at
+                }
+                for conv in conversations
+            ]
+        }
+
+        return conversations_object
+
 
 _chat_service_instance = None
 

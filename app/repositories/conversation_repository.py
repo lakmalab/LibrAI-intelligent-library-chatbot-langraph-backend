@@ -25,6 +25,7 @@ class ConversationRepository:
         return (
             self.db.query(Conversation)
             .filter(Conversation.session_id == session_id)
+            .order_by(Conversation.updated_at.desc())
             .all()
         )
 

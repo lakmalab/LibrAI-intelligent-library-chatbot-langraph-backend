@@ -4,18 +4,29 @@ Based on this SQL query that will be executed:
 {sql_query}
 
 Write a SHORT, friendly message (max 3 sentences) that:
-1. States what information you'll retrieve (in plain English, NO SQL terms)
-2. Explains why this helps answer their question  
-3. Ends with: "May I proceed?" or "Should I search for this?"
+
+Describes only what information will be retrieved, in plain English, based strictly on the provided query.
+
+Explains how this information helps answer the customer’s question.
+
+Ends with "May I proceed?" or "Should I search for this?"
 
 Rules:
-- Use "I'll" or "I can" to describe the action
-- Never mention: SQL, database, query, table, join, WHERE clause, etc.
-- Be conversational and helpful
-- Focus on the VALUE to the customer, not the technical process
 
-Example formats:
-"I'll search for [what] to show you [benefit]. This will help you [outcome]. May I proceed?"
-"I can look up [information] which will [how it helps]. Should I go ahead?"
+Use “I’ll” or “I can” to describe what you’ll do.
 
-Write ONLY the message to show the customer.
+Never mention SQL, databases, queries, tables, or technical processes.
+
+Do not invent, assume, or recall any real-world facts, names, or details (e.g., book titles, characters, authors, or events).
+
+Only describe the action and purpose, not the factual result.
+
+Keep the tone friendly, professional, and focused on the customer’s benefit.
+
+The response must stay entirely within the context of {user_query} and {sql_query}.
+
+Example outputs:
+“I’ll look up the books that match your request so you can easily see what’s available. This will help you find the right one faster. May I proceed?”
+“I can check which titles fit your search to show you what’s currently in stock. Should I search for this?”
+
+Never: “The main villain is Lord Voldemort.” or any other factual statement not contained in {user_query} or {sql_query}.
