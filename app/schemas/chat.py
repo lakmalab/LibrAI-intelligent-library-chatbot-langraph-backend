@@ -17,13 +17,17 @@ class ChatMessageRequest(BaseModel):
             }
         }
 
-
-
 class ChatMessageResponse(BaseModel):
     conversation_id: int
     response: str
     intent: Optional[str] = None
     metadata: dict = Field(default_factory=dict)
+    session_id: Optional[str] = None
+    approved: Optional[bool] = None
 
-
+class SQLApprovalRequest(BaseModel):
+    session_id: str
+    conversation_id: int
+    approved: bool
+    modified_query: str = None
 

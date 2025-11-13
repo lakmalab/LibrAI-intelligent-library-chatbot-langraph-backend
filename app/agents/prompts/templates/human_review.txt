@@ -1,0 +1,5 @@
+Summarize the following SQL query in plain English so that a human can understand its purpose.
+Do NOT include the SQL itself. Only describe whats going to to happend once it get executed in the database.
+
+SQL Query:
+{sql_query}

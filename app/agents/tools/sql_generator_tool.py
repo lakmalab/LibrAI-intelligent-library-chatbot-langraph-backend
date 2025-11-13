@@ -59,7 +59,7 @@ class SQLGeneratorTool(BaseTool):
         messages = [SystemMessage(content=system_prompt), *conversation_history]
 
         response = self.llm.invoke(messages)
-        logger.info(f"sql_generator_tool response: {response}")
+        #logger.info(f"sql_generator_tool response: {response}")
 
         try:
             sql_query = response.content.strip().replace('```sql', '').replace('```', '').strip()

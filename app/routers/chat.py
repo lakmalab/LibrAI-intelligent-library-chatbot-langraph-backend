@@ -3,7 +3,7 @@ from typing import Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
 
-from app.schemas.chat import ChatMessageResponse, ChatMessageRequest
+from app.schemas.chat import ChatMessageResponse, ChatMessageRequest, SQLApprovalRequest
 from app.services.chat_service import ChatService, get_chat_service
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,7 @@ class ChatController:
 
     def _register_routes(self):
         self.router.post("/message", response_model=ChatMessageResponse)(self.send_message)
+        self.router.post("/approve-sql", response_model=ChatMessageResponse)(self.approve_sql_query)
 
     async def send_message(
             self,request: ChatMessageRequest,
@@ -47,6 +48,16 @@ class ChatController:
                 detail=error_msg
             )
 
+    async def approve_sql_query(
+        self,request: SQLApprovalRequest,
+        chat_service: ChatService = Depends(get_chat_service)
+    ):
+        return await chat_service.approve_sql_query(
+            session_id=request.session_id,
+            conversation_id=request.conversation_id,
+            approved=request.approved,
+            modified_query=request.modified_query
+        )
 
 chat_controller = ChatController()
 router = chat_controller.router

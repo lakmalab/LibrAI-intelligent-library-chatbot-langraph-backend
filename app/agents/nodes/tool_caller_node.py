@@ -29,7 +29,6 @@ class ToolCallerNode:
                         "state": state,
                         "user_query": user_query
                     })
-                    logger.info(f"ToolCallerNode: SQL generator result: {tool_result}")
 
                     results["sql_query"] = tool_result.get("sql_query", "")
                     results["tool_call"] = toolcall.SQL_QUERY_EXECUTE

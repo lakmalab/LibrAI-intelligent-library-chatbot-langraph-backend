@@ -21,3 +21,10 @@ class AgentState(TypedDict):
     tool_results: str
     schema_sent_once:str
     tool_call: str
+
+    generated_sql_query: Optional[str]
+    sql_approved: Optional[bool]
+    sql_reviewed: Optional[bool]
+    awaiting_human_approval: Optional[bool]
+    pending_review: Optional[Dict[str, Any]]
+    rejection_reason: Optional[str]
