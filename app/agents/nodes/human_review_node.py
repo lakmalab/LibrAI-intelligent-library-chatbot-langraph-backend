@@ -8,7 +8,6 @@ from app.agents.prompts.registry import PROMPTS
 from app.agents.state import AgentState
 from app.core.logger import get_logger
 from app.enums import AiModel
-from app.enums.intent import intents
 
 logger = get_logger("human_review_node")
 def human_review_node(state: AgentState) -> Dict[str, Any]:

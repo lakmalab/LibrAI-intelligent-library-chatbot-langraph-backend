@@ -47,7 +47,6 @@ def build_graph():
             logger.info("SQL approved, proceeding to execution")
             return routes.TOOL_CALLER_NODE
         elif state.get("sql_reviewed", False) and not state.get("sql_approved", False):
-
             logger.info("SQL rejected, generating rejection response")
             return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
         else:
