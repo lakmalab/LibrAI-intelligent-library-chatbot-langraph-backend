@@ -8,6 +8,7 @@ from app.agents.prompts.registry import PROMPTS
 from app.agents.state import AgentState
 from app.core.logger import get_logger
 from app.enums import AiModel
+from app.enums.intent import intents
 
 logger = get_logger("human_review_node")
 def human_review_node(state: AgentState) -> Dict[str, Any]:
@@ -18,7 +19,7 @@ def human_review_node(state: AgentState) -> Dict[str, Any]:
 
     conversation_history = state.get("messages", [])
     user_message = state.get("user_query", "")
-    system_prompt = PROMPTS.get("human_review", sql_query=sql_query)
+    system_prompt = PROMPTS.get("human_review", sql_query=sql_query, user_query=user_message)
     logger.info(f"messages history: {len(conversation_history)}")
 
     messages = [

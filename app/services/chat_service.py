@@ -5,6 +5,7 @@ from fastapi import Depends
 from app.agents.graph import build_graph
 from app.db.dbconnection import get_db
 from app.enums import RoleType
+from app.enums.intent import intents
 from app.models import ChatMessage
 from app.models.session import Session
 from app.repositories.chat_repository import ChatRepository
@@ -97,36 +98,86 @@ class ChatService:
 
         current_state = await self.agent.aget_state(thread_config)
 
-        approval_state = {
-            **current_state.values,
-            "sql_approved": approved,
-            "sql_reviewed": True,
-            "awaiting_human_approval": False
-        }
-
-        if approved and modified_query:
-            approval_state["sql_query"] = modified_query
-            logger.info("Using modified SQL query from human")
-        elif not approved:
-            approval_state["rejection_reason"] = "User rejected the query"
+        if not approved:
             logger.info("SQL query rejected by human")
 
-        result = await self.agent.ainvoke(approval_state, config=thread_config)
+            await self.agent.aupdate_state(
+                thread_config,
+                {
+                    "sql_approved": False,
+                    "sql_reviewed": True,
+                    "awaiting_human_approval": False,
+                    "rejection_reason": "User rejected the query"
+                }
+            )
+            update_values = {
+                "sql_approved": False,
+                "sql_reviewed": True,
+                "awaiting_human_approval": False
+            }
+            if modified_query:
+                update_values["intent"] = intents.REJECTED
+                logger.info("Using modified SQL query from human")
 
-        response_text = result.get("response", "Query processed.")
-        intent = result.get("intent")
+            await self.agent.aupdate_state(
+                thread_config,
+                {
+                    "sql_approved": False,
+                    "sql_reviewed": True,
+                    "awaiting_human_approval": False,
+                    "rejection_reason": "User rejected the query",
+                    "intent": "rejected"
+                },
+                as_node="human_review_node"
+            )
 
-        return ChatMessageResponse(
-            conversation_id=conversation_id,
-            response=str(response_text),
-            intent=intent,
-            metadata={
-                "approved": approved,
-                "modified_query": modified_query
-            },
-            session_id=session_id,
-            approved=approved
-        )
+            result = await self.agent.ainvoke(None, config=thread_config)
+
+            response_text = result.get("response", "Query was rejected. How else can I help you?")
+
+            return ChatMessageResponse(
+                conversation_id=conversation_id,
+                response=str(response_text),
+                intent=result.get("intent"),
+                metadata={
+                    "approved": False,
+                    "rejected": True
+                },
+                session_id=session_id,
+                approved=False
+            )
+
+        else:
+            logger.info("SQL query approved by human")
+
+            update_values = {
+                "sql_approved": True,
+                "sql_reviewed": True,
+                "awaiting_human_approval": False
+            }
+
+            if modified_query:
+                update_values["sql_query"] = modified_query
+                logger.info("Using modified SQL query from human")
+
+            await self.agent.aupdate_state(thread_config, update_values)
+
+            result = await self.agent.ainvoke(None, config=thread_config)
+
+            response_text = result.get("response", "Query processed.")
+            intent = result.get("intent")
+
+            return ChatMessageResponse(
+                conversation_id=conversation_id,
+                response=str(response_text),
+                intent=intent,
+                metadata={
+                    "approved": True,
+                    "modified_query": modified_query
+                },
+                session_id=session_id,
+                approved=True
+            )
 
     def save_message(
             self,

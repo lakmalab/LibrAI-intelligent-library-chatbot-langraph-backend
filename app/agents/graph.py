@@ -41,12 +41,18 @@ def build_graph():
         else:
             return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
 
+
     def route_after_human_review(state: AgentState) -> str:
         if state.get("sql_approved", False) and state.get("sql_reviewed", False):
             logger.info("SQL approved, proceeding to execution")
             return routes.TOOL_CALLER_NODE
+        elif state.get("sql_reviewed", False) and not state.get("sql_approved", False):
+
+            logger.info("SQL rejected, generating rejection response")
+            return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
         else:
-            logger.info("SQL rejected, generating response")
+
+            logger.info("Unexpected state in human review routing")
             return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
 
     workflow.add_node(routes.INTENT_ROUTER_NODE, intent_router_node)

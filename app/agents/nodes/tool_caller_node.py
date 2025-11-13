@@ -65,7 +65,9 @@ class ToolCallerNode:
 
                     results["query_results"] = tool_result
                     results["tool_call"] = ""
-
+                    results["sql_approved"] = False
+                    results["sql_reviewed"] = False
+                    results["awaiting_human_approval"] = False
                     results["tool_results"] = json.dumps(tool_result, default=str)
 
             except Exception as e:
