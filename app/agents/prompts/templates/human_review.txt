@@ -1,0 +1,21 @@
+You are helping a library customer. They asked: "{user_query}"
+
+Based on this SQL query that will be executed:
+{sql_query}
+
+Write a SHORT, friendly message (max 3 sentences) that:
+1. States what information you'll retrieve (in plain English, NO SQL terms)
+2. Explains why this helps answer their question  
+3. Ends with: "May I proceed?" or "Should I search for this?"
+
+Rules:
+- Use "I'll" or "I can" to describe the action
+- Never mention: SQL, database, query, table, join, WHERE clause, etc.
+- Be conversational and helpful
+- Focus on the VALUE to the customer, not the technical process
+
+Example formats:
+"I'll search for [what] to show you [benefit]. This will help you [outcome]. May I proceed?"
+"I can look up [information] which will [how it helps]. Should I go ahead?"
+
+Write ONLY the message to show the customer.

@@ -9,6 +9,8 @@ from app.enums import AiModel
 from app.core.logger import get_logger
 import json
 
+from app.enums.intent import intents
+
 logger = get_logger("conversational_response_node")
 def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
     intent = state.get("intent")
@@ -19,7 +21,7 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
     user_message = state.get("user_query", "")
 
 
-    if intent == "general_chat":
+    if intent == intents.GENERAL:
         system_prompt = PROMPTS.get("general_chat").format(
             query=user_message
         )
@@ -32,7 +34,7 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
         logger.info(f"IGeneral chat response: {response}")
 
 
-    elif intent == "sql_query":
+    elif intent == intents.SQL_QUERY:
         query_result = state.get("tool_results")
         query_result_text = json.dumps(query_result, indent=2)
         if query_result:
@@ -40,7 +42,6 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
                 query=user_message,
                 query_result=query_result_text
             )
-            logger.info(f"system_prompt: {system_prompt}")
             messages = [
                 SystemMessage(content=system_prompt),
                 *conversation_history
@@ -51,12 +52,29 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
         else:
             response ="something went wrong getting the sql results"
 
-    else:
-        system_prompt = """You are a friendly library assistant chatbot.
-                        The user's intent is unclear. Respond naturally and try to understand what they need.
-                        Ask clarifying questions if needed, or offer general assistance.
-                        Be helpful, friendly, and guide them toward the information or service they might need."""
+    elif intent == intents.REJECTED:
+        query_result = state.get("tool_results")
+        query_result_text = json.dumps(query_result, indent=2)
+        if query_result:
+            system_prompt = PROMPTS.get("sql_rejected").format(
+                user_query=user_message,
+                sql_query=query_result_text
+            )
 
+            messages = [
+                SystemMessage(content=system_prompt),
+                *conversation_history
+            ]
+            logger.error(f"sql_result_natural chat response: {messages}")
+            response = llm.invoke(messages)
+            logger.info(f"sql_result_natural chat response: {response}")
+        else:
+            response ="something went wrong getting the sql results"
+
+    else:
+        system_prompt = PROMPTS.get("fallback").format(
+            query=user_message
+        )
         messages = [
             SystemMessage(content=system_prompt),
             *conversation_history
@@ -64,6 +82,7 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
 
         response = llm.invoke(messages)
         logger.info(f"Fallback response generated for unknown intent")
+
 
     logger.info(f"Generated response: {response.content[:100]}...")
 
