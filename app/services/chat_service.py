@@ -26,12 +26,9 @@ class ChatService:
 
     async def process_chat_message(self, request) -> ChatMessageResponse:
         try:
-            conversation = self.conversation_repo.get_conversation_by_session_id(request.session_id)
-            if conversation is None:
-                conversation = self.conversation_repo.create_conversation({
-                    "session_id": request.session_id,
-                    "title": "New Conversation"
-                })
+            conversation = (self.conversation_repo
+                            .get_or_create_conversation(request.session_id, request.conversation_id))
+
         except Exception as e:
             logger.error(e)
             raise e
