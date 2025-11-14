@@ -6,7 +6,7 @@ from app.agents.graph import build_graph
 from app.db.dbconnection import get_db
 from app.enums import RoleType
 from app.enums.intent import intents
-from app.models import ChatMessage
+from app.models import ChatMessage, Conversation
 from app.models.session import Session
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.conversation_repository import ConversationRepository
@@ -36,6 +36,12 @@ class ChatService:
             logger.error(e)
             raise e
 
+        self.save_message(
+            conversation_id=conversation.id,
+            role=RoleType.USER,
+            content=request.message
+        )
+
         thread_config = {
             "configurable": {
                 "thread_id": f"{request.session_id}_conv_{conversation.id}"
@@ -57,6 +63,12 @@ class ChatService:
 
             response_text = pending_review.get("summary") or pending_review.get(
                 "message") or "Please review the SQL query."
+
+            self.save_message(
+                conversation_id=conversation.id,
+                role=RoleType.ASSISTANT,
+                content=result.message
+            )
 
             return ChatMessageResponse(
                 conversation_id=conversation.id,
@@ -134,7 +146,11 @@ class ChatService:
             result = await self.agent.ainvoke(None, config=thread_config)
 
             response_text = result.get("response", "Query was rejected. How else can I help you?")
-
+            self.save_message(
+                conversation_id=conversation_id,
+                role=RoleType.ASSISTANT,
+                content=result.message
+            )
             return ChatMessageResponse(
                 conversation_id=conversation_id,
                 response=str(response_text),
@@ -226,7 +242,48 @@ class ChatService:
 
         return conversations_object
 
+    async def add_new_conversation(self, session_id):
+        try:
 
+            conversations = self.conversation_repo.create_conversation({
+                "session_id": session_id,
+                "title": "New Conversation"
+            })
+
+            conversations_object = {
+                "session_id": conversations.session_id,
+                "conversations": [
+                    {
+                        "id": conversations.id,
+                        "title": conversations.title,
+                        "created_at": conversations.created_at,
+                        "updated_at": conversations.updated_at
+                    }
+                ]
+            }
+
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+        return conversations_object
+
+    async def get_chat_history(self, conversation_id):
+
+        messages = self.chat_repo.get_messages_by_conversation_id(conversation_id)
+        return {
+            "conversation_id": conversation_id,
+            "messages": [
+                {
+                    "id": msg.id,
+                    "role": msg.role,
+                    "content": msg.content,
+                    "intent": msg.intent,
+                    "created_at": msg.created_at
+                }
+                for msg in messages
+            ]
+        }
 _chat_service_instance = None
 
 

@@ -4,6 +4,9 @@ from typing import Optional, List
 from datetime import datetime
 import re
 
+from app.enums import RoleType
+
+
 class ChatMessageRequest(BaseModel):
     message: str = Field(..., min_length=1, description="User message content")
     session_id: str = Field(..., description="Unique session identifier")
@@ -63,3 +66,16 @@ class ConversationItem(BaseModel):
 class ConversationListResponse(BaseModel):
     session_id: str
     conversations: List[ConversationItem]
+
+class MessageHistory(BaseModel):
+    id: int
+    role: RoleType
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ChatHistoryResponse(BaseModel):
+    conversation_id: int
+    messages: List[MessageHistory]
