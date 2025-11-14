@@ -1,8 +1,11 @@
 from pydantic import BaseModel, field_validator
 from pydantic import BaseModel, Field,validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 import re
+
+from app.enums import RoleType
+
 
 class ChatMessageRequest(BaseModel):
     message: str = Field(..., min_length=1, description="User message content")
@@ -43,3 +46,36 @@ class SQLApprovalRequest(BaseModel):
     approved: bool
     modified_query: str = None
 
+class ConversationResponse(BaseModel):
+    id: int
+    session_id: str
+    scheme_id: Optional[int]
+    title: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationItem(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+class ConversationListResponse(BaseModel):
+    session_id: str
+    conversations: List[ConversationItem]
+
+class MessageHistory(BaseModel):
+    id: int
+    role: RoleType
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ChatHistoryResponse(BaseModel):
+    conversation_id: int
+    messages: List[MessageHistory]

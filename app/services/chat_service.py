@@ -6,7 +6,7 @@ from app.agents.graph import build_graph
 from app.db.dbconnection import get_db
 from app.enums import RoleType
 from app.enums.intent import intents
-from app.models import ChatMessage
+from app.models import ChatMessage, Conversation
 from app.models.session import Session
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.conversation_repository import ConversationRepository
@@ -26,15 +26,18 @@ class ChatService:
 
     async def process_chat_message(self, request) -> ChatMessageResponse:
         try:
-            conversation = self.conversation_repo.get_conversation_by_session_id(request.session_id)
-            if conversation is None:
-                conversation = self.conversation_repo.create_conversation({
-                    "session_id": request.session_id,
-                    "title": "New Conversation"
-                })
+            conversation = (self.conversation_repo
+                            .get_or_create_conversation(request.session_id, request.conversation_id))
+
         except Exception as e:
             logger.error(e)
             raise e
+
+        self.save_message(
+            conversation_id=conversation.id,
+            role=RoleType.USER,
+            content=request.message
+        )
 
         thread_config = {
             "configurable": {
@@ -57,6 +60,12 @@ class ChatService:
 
             response_text = pending_review.get("summary") or pending_review.get(
                 "message") or "Please review the SQL query."
+
+            self.save_message(
+                conversation_id=conversation.id,
+                role=RoleType.ASSISTANT,
+                content=response_text
+            )
 
             return ChatMessageResponse(
                 conversation_id=conversation.id,
@@ -134,7 +143,11 @@ class ChatService:
             result = await self.agent.ainvoke(None, config=thread_config)
 
             response_text = result.get("response", "Query was rejected. How else can I help you?")
-
+            self.save_message(
+                conversation_id=conversation_id,
+                role=RoleType.ASSISTANT,
+                content=response_text
+            )
             return ChatMessageResponse(
                 conversation_id=conversation_id,
                 response=str(response_text),
@@ -198,7 +211,76 @@ class ChatService:
 
         return message
 
+    async def get_user_conversations(self, session_id):
+        try:
+            conversations = self.conversation_repo.get_conversations_by_session_id(session_id)
+            if conversations is None:
+                conversations = self.conversation_repo.create_conversation({
+                    "session_id": session_id,
+                    "title": "New Conversation"
+                })
 
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+        conversations_object = {
+            "session_id": session_id,
+            "conversations": [
+                {
+                    "id": conv.id,
+                    "title": conv.title,
+                    "created_at": conv.created_at,
+                    "updated_at": conv.updated_at
+                }
+                for conv in conversations
+            ]
+        }
+
+        return conversations_object
+
+    async def add_new_conversation(self, session_id):
+        try:
+
+            conversations = self.conversation_repo.create_conversation({
+                "session_id": session_id,
+                "title": "New Conversation"
+            })
+
+            conversations_object = {
+                "session_id": conversations.session_id,
+                "conversations": [
+                    {
+                        "id": conversations.id,
+                        "title": conversations.title,
+                        "created_at": conversations.created_at,
+                        "updated_at": conversations.updated_at
+                    }
+                ]
+            }
+
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+        return conversations_object
+
+    async def get_chat_history(self, conversation_id):
+
+        messages = self.chat_repo.get_messages_by_conversation_id(conversation_id)
+        return {
+            "conversation_id": conversation_id,
+            "messages": [
+                {
+                    "id": msg.id,
+                    "role": msg.role,
+                    "content": msg.content,
+                    "intent": msg.intent,
+                    "created_at": msg.created_at
+                }
+                for msg in messages
+            ]
+        }
 _chat_service_instance = None
 
 

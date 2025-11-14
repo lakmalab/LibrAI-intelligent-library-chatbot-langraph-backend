@@ -67,6 +67,7 @@ class SQLGeneratorTool(BaseTool):
             logger.error(f"sql_generator_tool failed parsing SQL: {e}")
             sql_query = ""
 
+        logger.info(f"sql_query: {sql_query}")
         return {
             "db_schema": db_schema,
             "sql_query": sql_query,
