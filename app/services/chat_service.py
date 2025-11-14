@@ -64,7 +64,7 @@ class ChatService:
             self.save_message(
                 conversation_id=conversation.id,
                 role=RoleType.ASSISTANT,
-                content=result.message
+                content=response_text
             )
 
             return ChatMessageResponse(
@@ -146,7 +146,7 @@ class ChatService:
             self.save_message(
                 conversation_id=conversation_id,
                 role=RoleType.ASSISTANT,
-                content=result.message
+                content=response_text
             )
             return ChatMessageResponse(
                 conversation_id=conversation_id,

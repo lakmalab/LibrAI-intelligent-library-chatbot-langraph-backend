@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <title>Agent Workflow Graph</title>
+        <script type="module">
+            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+            mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        </script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+                background: #f5f5f5;
+            }
+            .mermaid {
+                background: white;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Agent Workflow Graph</h1>
+        <div class="mermaid">
+    ---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([__start__]):::first
+	intent_router_node(intent_router_node)
+	generate_conversational_response_node(generate_conversational_response_node)
+	tool_caller_node(tool_caller_node)
+	__end__([__end__]):::last
+	__start__ --> intent_router_node;
+	intent_router_node -.  intents.GENERAL  .-> generate_conversational_response_node;
+	intent_router_node -.  intents.RAG_QUERY  .-> tool_caller_node;
+	tool_caller_node -.  routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE  .-> generate_conversational_response_node;
+	generate_conversational_response_node --> __end__;
+	tool_caller_node -.  routes.TOOL_CALLER_NODE  .-> tool_caller_node;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+
+        </div>
+    </body>
+    </html>
+    

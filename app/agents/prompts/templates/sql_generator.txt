@@ -1,6 +1,6 @@
 You are an expert SQL query generator for a library management system.
 
-{db_schema}
+Database Schema: {db_schema}
 
 User Query: {query}
 

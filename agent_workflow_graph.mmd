@@ -1,0 +1,32 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+    __start__([<p>__start__</p>]):::first
+    intent_router_node(intent_router_node)
+    generate_conversational_response_node(generate_conversational_response_node)
+    tool_caller_node(tool_caller_node)
+    human_review_node(human_review_node<hr/><small><em>__interrupt = after</em></small>)
+    __end__([<p>__end__</p>]):::last
+
+    __start__ --> intent_router_node;
+
+    intent_router_node -->|intents.SQL_QUERY| tool_caller_node;
+    intent_router_node -->|intents.RAG_QUERY| tool_caller_node;
+    intent_router_node -->|intents.GENERAL| generate_conversational_response_node;
+
+    tool_caller_node -->|toolcall.SQL_QUERY_EXECUTE ∧ ¬sql_reviewed| human_review_node;
+    tool_caller_node -->|toolcall.SQL_QUERY_EXECUTE ∧ sql_reviewed| tool_caller_node;
+    tool_caller_node -->|default| generate_conversational_response_node;
+
+    human_review_node -->|sql_approved ∧ sql_reviewed| tool_caller_node;
+    human_review_node -->|default| generate_conversational_response_node;
+
+    generate_conversational_response_node --> __end__;
+
+    classDef default fill:#f2f0ff,line-height:1.2
+    classDef first fill-opacity:0
+    classDef last fill:#bfb6fc
+    classDef interrupt fill:#fff2cc
