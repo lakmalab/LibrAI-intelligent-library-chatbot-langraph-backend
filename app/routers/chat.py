@@ -3,8 +3,8 @@ from typing import Dict, Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
 
-from app.schemas.chat import ChatMessageResponse, ChatMessageRequest, SQLApprovalRequest, ConversationResponse, \
-    ConversationListResponse, MessageHistory, ChatHistoryResponse
+from app.schemas.chat import ChatMessageResponse, ChatMessageRequest, ConversationResponse, \
+    ConversationListResponse, MessageHistory, ChatHistoryResponse, CredentialApprovalRequest
 from app.services.chat_service import ChatService, get_chat_service
 from app.services.session_service import SessionService, get_session_service
 
@@ -18,10 +18,10 @@ class ChatController:
 
     def _register_routes(self):
         self.router.post("/message", response_model=ChatMessageResponse)(self.send_message)
-        self.router.post("/approve-sql", response_model=ChatMessageResponse)(self.approve_sql_query)
         self.router.get("/conversations/{session_id}", response_model=ConversationListResponse)(self.get_user_conversations)
         self.router.get("/conversations/new/{session_id}", response_model=ConversationListResponse)(self.add_new_conversation)
         self.router.get("/history/{conversation_id}", response_model=ChatHistoryResponse)(self.get_chat_history)
+        self.router.post("/approve-credential", response_model=ChatMessageResponse)(self.approve_credentials)
 
     async def send_message(
             self,request: ChatMessageRequest,chat_service: ChatService = Depends(get_chat_service)
@@ -52,15 +52,17 @@ class ChatController:
                 detail=error_msg
             )
 
-    async def approve_sql_query(
-        self,request: SQLApprovalRequest,
+    async def approve_credentials(
+            self,
+            request: CredentialApprovalRequest,
             chat_service: ChatService = Depends(get_chat_service)
     ):
-        return await chat_service.approve_sql_query(
+        return await chat_service.approve_credentials(
             session_id=request.session_id,
             conversation_id=request.conversation_id,
             approved=request.approved,
-            modified_query=request.modified_query
+            modified_email=request.modified_email,
+            modified_password=request.modified_password
         )
 
     async def get_user_conversations(

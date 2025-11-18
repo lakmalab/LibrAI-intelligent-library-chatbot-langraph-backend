@@ -19,7 +19,7 @@ def get_table_info_node(state: AgentState) -> Dict[str, Any]:
     schema_result = tool.run(user_query)
 
     can_answer = schema_result.get("can_answer_query", False)
-
+    need_to_interrupt = schema_result.get("need_to_interrupt", False)
     logger.info(f"Schema search complete: can_answer={can_answer}")
     logger.info(
         f"Tables analyzed: {schema_result.get('tables_analyzed', 0)} out of {schema_result.get('total_tables_in_db', 0)}")
@@ -37,4 +37,5 @@ def get_table_info_node(state: AgentState) -> Dict[str, Any]:
         "schema_info": schema_result,
         "intent": intents.GENERAL,
         "can_answer_from_db": True,
+        "need_to_interrupt": need_to_interrupt,
     }

@@ -33,4 +33,5 @@ def generate_sql_query_node(state: AgentState) -> Dict[str, Any]:
     return {
         "sql_query": result,
         "intent": intents.SQL_QUERY,
+        "need_to_interrupt": False
     }

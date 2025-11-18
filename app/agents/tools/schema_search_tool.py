@@ -132,12 +132,20 @@ class AgenticSchemaSearchTool(BaseTool):
             logger.info("Stage 3: Fetching detailed schema...")
             detailed_schema = self._get_detailed_schema(inspector, relevant_tables)
 
+            need_interrupt = any(
+                any(col["name"].lower() == "member_id" for col in table["columns"])
+                for table in detailed_schema
+            )
+
+            logger.info(f"need_to_interrupt = {need_interrupt}")
+
             return {
                 "success": True,
                 "total_tables_in_db": len(table_metadata),
                 "tables_analyzed": len(relevant_tables),
                 "schema": detailed_schema,
                 "can_answer_query": True,
+                "need_to_interrupt":need_interrupt
             }
 
         except Exception as e:

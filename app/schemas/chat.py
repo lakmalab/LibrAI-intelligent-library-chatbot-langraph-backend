@@ -40,11 +40,13 @@ class ChatMessageResponse(BaseModel):
     session_id: Optional[str] = None
     approved: Optional[bool] = None
 
-class SQLApprovalRequest(BaseModel):
+class CredentialApprovalRequest(BaseModel):
     session_id: str
     conversation_id: int
     approved: bool
-    modified_query: str = None
+    modified_email: str = None
+    modified_password: str = None
+
 
 class ConversationResponse(BaseModel):
     id: int

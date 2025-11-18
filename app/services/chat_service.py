@@ -53,11 +53,12 @@ class ChatService:
 
         result = await self.agent.ainvoke(agent_state, config=thread_config)
 
-        if result.get("awaiting_human_approval", False):
-            logger.info("SQL query requires human approval")
+
+        if result.get("need_to_interrupt", False):
+            logger.info("credentials human approval")
 
             pending_review = result.get("pending_review", {})
-
+            logger.info(f"awaiting_credential_approval:{pending_review}", )
             response_text = pending_review.get("summary") or pending_review.get(
                 "message") or "Please review the SQL query."
 
@@ -74,7 +75,8 @@ class ChatService:
                 metadata={
                     "request": request.model_dump(),
                     "requires_approval": True,
-                    "sql_query": pending_review.get("generated_sql_query")
+                    "pending_email": pending_review.get("email"),
+                    "pending_password": pending_review.get("password")
                 },
                 session_id=request.session_id,
                 approved=False
@@ -96,101 +98,6 @@ class ChatService:
             approved=True
         )
 
-    async def approve_sql_query(self, session_id: str, conversation_id: int, approved: bool,
-                                modified_query: str = None) -> ChatMessageResponse:
-
-        thread_config = {
-            "configurable": {
-                "thread_id": f"{session_id}_conv_{conversation_id}"
-            }
-        }
-
-        current_state = await self.agent.aget_state(thread_config)
-
-        if not approved:
-            logger.info("SQL query rejected by human")
-
-            await self.agent.aupdate_state(
-                thread_config,
-                {
-                    "sql_approved": False,
-                    "sql_reviewed": True,
-                    "awaiting_human_approval": False,
-                    "rejection_reason": "User rejected the query"
-                }
-            )
-            update_values = {
-                "sql_approved": False,
-                "sql_reviewed": True,
-                "awaiting_human_approval": False
-            }
-            if modified_query:
-                update_values["intent"] = intents.REJECTED
-                logger.info("Using modified SQL query from human")
-
-            await self.agent.aupdate_state(
-                thread_config,
-                {
-                    "sql_approved": False,
-                    "sql_reviewed": True,
-                    "awaiting_human_approval": False,
-                    "rejection_reason": "User rejected the query",
-                    "intent": "rejected"
-                },
-                as_node="human_review_node"
-            )
-
-            result = await self.agent.ainvoke(None, config=thread_config)
-
-            response_text = result.get("response", "Query was rejected. How else can I help you?")
-            self.save_message(
-                conversation_id=conversation_id,
-                role=RoleType.ASSISTANT,
-                content=response_text
-            )
-            return ChatMessageResponse(
-                conversation_id=conversation_id,
-                response=str(response_text),
-                intent=result.get("intent"),
-                metadata={
-                    "approved": False,
-                    "rejected": True
-                },
-                session_id=session_id,
-                approved=False
-            )
-
-        else:
-            logger.info("SQL query approved by human")
-
-            update_values = {
-                "sql_approved": True,
-                "sql_reviewed": True,
-                "awaiting_human_approval": False
-            }
-
-            if modified_query:
-                update_values["sql_query"] = modified_query
-                logger.info("Using modified SQL query from human")
-
-            await self.agent.aupdate_state(thread_config, update_values)
-
-            result = await self.agent.ainvoke(None, config=thread_config)
-
-            response_text = result.get("response", "Query processed.")
-            intent = result.get("intent")
-
-            return ChatMessageResponse(
-                conversation_id=conversation_id,
-                response=str(response_text),
-                intent=intent,
-                metadata={
-                    "approved": True,
-                    "modified_query": modified_query
-                },
-                session_id=session_id,
-                approved=True
-            )
 
     def save_message(
             self,
@@ -281,6 +188,89 @@ class ChatService:
                 for msg in messages
             ]
         }
+
+    async def approve_credentials(
+            self,
+            session_id: str,
+            conversation_id: int,
+            approved: bool,
+            modified_email: str = None,
+            modified_password: str = None
+    ) -> ChatMessageResponse:
+
+        thread_config = {
+            "configurable": {
+                "thread_id": f"{session_id}_conv_{conversation_id}"
+            }
+        }
+
+        current_state = await self.agent.aget_state(thread_config)
+
+        if not approved:
+            logger.info("Credentials rejected by human")
+
+            update_values = {
+                "credentials_approved": False,
+                "credentials_reviewed": True,
+                "awaiting_credential_approval": False,
+                "rejection_reason": "User rejected the credentials",
+                "intent": "credentials_rejected"
+            }
+
+            await self.agent.aupdate_state(thread_config, update_values, as_node="credential_review_node")
+
+            result = await self.agent.ainvoke(None, config=thread_config)
+
+            response_text = result.get("response", "Credentials were rejected. Please provide correct details.")
+            self.save_message(
+                conversation_id=conversation_id,
+                role=RoleType.ASSISTANT,
+                content=response_text
+            )
+
+            return ChatMessageResponse(
+                conversation_id=conversation_id,
+                response=str(response_text),
+                intent=result.get("intent"),
+                metadata={"approved": False, "rejected": True},
+                session_id=session_id,
+                approved=False
+            )
+
+        logger.info("Credentials approved by human")
+
+        update_values = {
+            "credentials_approved": True,
+            "credentials_reviewed": True,
+            "awaiting_credential_approval": False
+        }
+
+        if modified_email:
+            update_values["email"] = modified_email
+        if modified_password:
+            update_values["password"] = modified_password
+
+        await self.agent.aupdate_state(thread_config, update_values)
+
+        result = await self.agent.ainvoke(None, config=thread_config)
+
+        response_text = result.get("response", "Credentials confirmed.")
+        intent = result.get("intent")
+
+        return ChatMessageResponse(
+            conversation_id=conversation_id,
+            response=str(response_text),
+            intent=intent,
+            metadata={
+                "approved": True,
+                "modified_email": modified_email,
+                "modified_password": modified_password
+            },
+            session_id=session_id,
+            approved=True
+        )
+
+
 _chat_service_instance = None
 
 
