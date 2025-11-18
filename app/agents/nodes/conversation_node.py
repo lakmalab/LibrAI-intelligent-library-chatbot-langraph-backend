@@ -22,7 +22,7 @@ def generate_conversational_response(state: AgentState) -> Dict[str, Any]:
 
 
     if intent == intents.GENERAL:
-        llm = get_llm(temperature=0, model=AiModel.GEMMA3)
+        #llm = get_llm(temperature=0, model=AiModel.GEMMA3)
         system_prompt = PROMPTS.get("general_chat").format(
             query=user_message
         )
