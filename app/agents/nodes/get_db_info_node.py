@@ -80,5 +80,5 @@ Based on this schema, the query can be answered from the database."""
         "schema_info": schema_result,
         "can_answer_from_db": True,
         "assistant_response": llm_response.content,
-        "sql_context": schema_summary  # Pass this to SQL generation node
+        "sql_context": schema_summary
     }

@@ -18,16 +18,17 @@ def intent_router_node(state: AgentState) -> Dict[str, Any]:
     conversation_history = state.get("messages", [])
     user_message = state.get("user_query", "")
 
-    schema_info = state.get("schema_info", {})
-    schema_matches = schema_info.get("matches", [])
+    schema_info = state.get("schema_info","")
 
-    logger.info(f"Schema matches found: {schema_matches}")
+
+    schema_matches = schema_info.get("schema", "")
+    #logger.info(f"schema_info: {schema_matches}")
+    #logger.info(f"Schema matches found: {schema_matches}")
 
     if schema_matches and len(schema_matches) > 0:
         logger.info("Intent resolved instantly: SQL QUERY (tables matched)")
         return {
             "intent": "sql_query",
-            "tool_call": toolcall.SQL_QUERY_GENERATE,
             "response": "Relevant table(s) found in schema → SQL query.",
             "messages": [
                 HumanMessage(content=user_message),
@@ -68,7 +69,6 @@ def intent_router_node(state: AgentState) -> Dict[str, Any]:
 
     return {
         "intent": intent,
-        "tool_call": toolcall.SQL_QUERY_GENERATE if intent == "sql_query" else None,
         "response": result.get("reasoning", ""),
         "messages": new_messages,
         "schema_info": schema_info

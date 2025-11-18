@@ -15,9 +15,8 @@ class AgentState(TypedDict):
     intent: intents
 
     response: str
-
-    sql_query:str
     tool_results: str
+    sql_query:str
 
     generated_sql_query: Optional[str]
     sql_approved: Optional[bool]

@@ -1,6 +1,8 @@
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
 from app.agents.nodes.conversation_node import generate_conversational_response
+from app.agents.nodes.execute_sql_query_node import execute_sql_query_node
+from app.agents.nodes.generate_sql_query_node import generate_sql_query_node
 from app.agents.nodes.get_db_info_node import get_table_info_node
 from app.agents.nodes.intent_router_node import intent_router_node
 from app.agents.nodes.human_review_node import human_review_node
@@ -39,6 +41,8 @@ def build_graph():
     workflow.add_node(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE, generate_conversational_response)
     workflow.add_node(routes.GET_TABLE_INFO_NODE, get_table_info_node)
     workflow.add_node(routes.HUMAN_REVIEW_NODE, human_review_node)
+    workflow.add_node(routes.GENERATE_SQL_QUERY_NODE, generate_sql_query_node)
+    workflow.add_node(routes.EXECUTE_SQL_QUERY_NODE, execute_sql_query_node)
 
     workflow.set_entry_point(routes.GET_TABLE_INFO_NODE)
     workflow.add_edge(routes.GET_TABLE_INFO_NODE, routes.INTENT_ROUTER_NODE)
@@ -47,13 +51,14 @@ def build_graph():
         routes.INTENT_ROUTER_NODE,
         route_after_intent,
         {
-            intents.SQL_QUERY: END,
+            intents.SQL_QUERY: routes.GENERATE_SQL_QUERY_NODE,
             intents.RAG_QUERY: END,
             intents.GENERAL: routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
         }
     )
 
-
+    workflow.add_edge(routes.GENERATE_SQL_QUERY_NODE, routes.EXECUTE_SQL_QUERY_NODE)
+    workflow.add_edge(routes.EXECUTE_SQL_QUERY_NODE, routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE)
 
     workflow.add_conditional_edges(
         routes.HUMAN_REVIEW_NODE,

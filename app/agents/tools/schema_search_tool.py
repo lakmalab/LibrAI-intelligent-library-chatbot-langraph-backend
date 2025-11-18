@@ -49,7 +49,7 @@ class AgenticSchemaSearchTool(BaseTool):
         tables_summary = "\n".join([
             f"- {t['table_name']}: {t['comment']}" if t['comment']
             else f"- {t['table_name']}"
-            for t in table_metadata[:100]  # Limit to first 100 for very large DBs
+            for t in table_metadata[:100]
         ])
 
         prompt = f"""You are a database schema expert. Given a user query and list of available tables, 
@@ -101,7 +101,6 @@ JSON Response:"""
                 foreign_keys = inspector.get_foreign_keys(table)
                 indexes = inspector.get_indexes(table)
 
-                # Get sample data to help LLM understand content
                 db = next(get_db())
                 sample_query = text(f"SELECT * FROM {table} LIMIT 3")
                 sample_data = db.execute(sample_query).fetchall()
@@ -128,43 +127,7 @@ JSON Response:"""
 
         return detailed_schema
 
-    def _validate_relevance(self, query: str, schema: List[Dict]) -> Dict[str, Any]:
 
-        schema_json = json.dumps(schema, indent=2)
-
-        prompt = f"""Given this database schema and user query, determine if the schema contains 
-the necessary tables/columns to answer the query.
-
-User Query: "{query}"
-
-Schema:
-{schema_json}
-
-Respond with JSON:
-{{
-    "can_answer": true/false,
-    "reasoning": "brief explanation",
-    "suggested_tables": ["table1", "table2"],
-    "suggested_columns": ["table.column1", "table.column2"],
-    "needs_joins": true/false
-}}"""
-
-        llm = get_llm(model=AiModel.GPT_5_NANO, temperature=0)
-        response = llm.invoke(prompt)
-
-        try:
-            content = response.content.strip()
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            return json.loads(content)
-        except:
-            return {
-                "can_answer": True,
-                "reasoning": "Validation failed, proceeding with available schema",
-                "suggested_tables": [s["table"] for s in schema],
-                "suggested_columns": [],
-                "needs_joins": False
-            }
 
     def _run(self, query: str, **kwargs) -> Dict[str, Any]:
         db = next(get_db())
@@ -182,16 +145,12 @@ Respond with JSON:
             logger.info("Stage 3: Fetching detailed schema...")
             detailed_schema = self._get_detailed_schema(inspector, relevant_tables)
 
-            logger.info("Stage 4: Validating schema relevance...")
-            validation = self._validate_relevance(query, detailed_schema)
-
             return {
                 "success": True,
                 "total_tables_in_db": len(table_metadata),
                 "tables_analyzed": len(relevant_tables),
                 "schema": detailed_schema,
-                "validation": validation,
-                "can_answer_query": validation.get("can_answer", True)
+
             }
 
         except Exception as e:

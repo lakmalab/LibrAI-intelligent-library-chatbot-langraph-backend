@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from langchain_core.messages import SystemMessage
 from langchain_core.tools import BaseTool
@@ -24,21 +24,20 @@ class SQLGeneratorTool(BaseTool):
             self._llm = get_llm(temperature=0, model=AiModel.GPT_5_NANO)
         return self._llm
 
-    def _run(self, state: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    def _run(self, user_query: str, schema_info: str, messages: List = None, **kwargs) -> str:
         logger.info(f"[sql_generator_tool] called")
-        conversation_history = state.get("messages", [])
-        user_message = state.get("user_query", "")
 
-        db_schema = state.get("schema_info")
-        schema_sent_once = state.get("schema_sent_once", False)
-
+        # Use provided parameters instead of accessing state
+        conversation_history = messages or []
+        user_message = user_query
+        db_schema = str(schema_info)
 
         system_prompt = PROMPTS.get("sql_generator", query=user_message, db_schema=db_schema)
+        logger.info(f"[SQLGeneratorTool system_prompt] : {system_prompt}")
         messages = [SystemMessage(content=system_prompt), *conversation_history]
 
         response = self.llm.invoke(messages)
-        #logger.info(f"sql_generator_tool response: {response}")
-
+        logger.info(f"[SQLGeneratorTool] result: {response}")
         try:
             sql_query = response.content.strip().replace('```sql', '').replace('```', '').strip()
         except Exception as e:
@@ -46,10 +45,7 @@ class SQLGeneratorTool(BaseTool):
             sql_query = ""
 
         logger.info(f"sql_query: {sql_query}")
-        return {
-            "sql_query": sql_query,
-            "response_text": sql_query,
-        }
+        return sql_query
 
-    async def _arun(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        return self._run(state)
+    async def _arun(self, user_query: str, schema_info: str, messages: List = None, **kwargs) -> Dict[str, Any]:
+        return self._run(user_query, schema_info, messages, **kwargs)
