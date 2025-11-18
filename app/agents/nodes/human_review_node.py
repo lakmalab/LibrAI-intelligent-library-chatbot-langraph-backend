@@ -18,7 +18,7 @@ def human_review_node(state: AgentState) -> Dict[str, Any]:
 
     conversation_history = state.get("messages", [])
     user_message = state.get("user_query", "")
-    system_prompt = PROMPTS.get("human_review", sql_query=sql_query, user_query=user_message)
+    system_prompt = PROMPTS.get("human_review").format(sql_query=sql_query, user_query=user_message)
     logger.info(f"messages history: {len(conversation_history)}")
 
     messages = [

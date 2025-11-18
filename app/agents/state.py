@@ -15,12 +15,8 @@ class AgentState(TypedDict):
     intent: intents
 
     response: str
-
-    db_schema: str
-    sql_query:str
     tool_results: str
-    schema_sent_once:str
-    tool_call: str
+    sql_query:str
 
     generated_sql_query: Optional[str]
     sql_approved: Optional[bool]
@@ -28,3 +24,5 @@ class AgentState(TypedDict):
     awaiting_human_approval: Optional[bool]
     pending_review: Optional[Dict[str, Any]]
     rejection_reason: Optional[str]
+    can_answer_from_db:bool
+    schema_info: str
