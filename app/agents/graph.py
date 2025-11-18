@@ -4,7 +4,6 @@ from app.agents.nodes.conversation_node import generate_conversational_response
 from app.agents.nodes.execute_sql_query_node import execute_sql_query_node
 from app.agents.nodes.generate_sql_query_node import generate_sql_query_node
 from app.agents.nodes.get_db_info_node import get_table_info_node
-from app.agents.nodes.intent_router_node import intent_router_node
 from app.agents.nodes.human_review_node import human_review_node
 from app.agents.state import AgentState
 from app.agents.tools.execute_dynamic_sql_query_tool import QueryExecutorTool
@@ -14,14 +13,17 @@ from app.enums.routes import routes
 from app.enums.tool_call import toolcall
 
 logger = get_logger("build_graph")
-
-
 def build_graph():
     workflow = StateGraph(AgentState)
 
 
-    def route_after_intent(state: AgentState) -> str:
-        return state.get("intent")
+    def route_after_get_db_info(state: AgentState) -> str:
+        if state.get("can_answer_from_db"):
+            logger.info("ROUTING TO GENERATE_SQL_QUERY_NODE")
+            return intents.SQL_QUERY
+        else:
+            logger.info("ROUTING TO GENERATE_CONVERSATIONAL_RESPONSE_NODE")
+            return intents.GENERAL
 
 
 
@@ -33,11 +35,9 @@ def build_graph():
             logger.info("SQL rejected, generating rejection response")
             return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
         else:
-
             logger.info("Unexpected state in human review routing")
             return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
 
-    workflow.add_node(routes.INTENT_ROUTER_NODE, intent_router_node)
     workflow.add_node(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE, generate_conversational_response)
     workflow.add_node(routes.GET_TABLE_INFO_NODE, get_table_info_node)
     workflow.add_node(routes.HUMAN_REVIEW_NODE, human_review_node)
@@ -45,11 +45,10 @@ def build_graph():
     workflow.add_node(routes.EXECUTE_SQL_QUERY_NODE, execute_sql_query_node)
 
     workflow.set_entry_point(routes.GET_TABLE_INFO_NODE)
-    workflow.add_edge(routes.GET_TABLE_INFO_NODE, routes.INTENT_ROUTER_NODE)
 
     workflow.add_conditional_edges(
-        routes.INTENT_ROUTER_NODE,
-        route_after_intent,
+        routes.GET_TABLE_INFO_NODE,
+        route_after_get_db_info,
         {
             intents.SQL_QUERY: routes.GENERATE_SQL_QUERY_NODE,
             intents.RAG_QUERY: END,

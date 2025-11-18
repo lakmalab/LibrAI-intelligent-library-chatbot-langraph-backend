@@ -1,0 +1,17 @@
+You are a database schema expert. Given a user query and list of available tables,
+identify the 3-5 most relevant tables that would contain the data needed to answer the query.
+
+User Query: "{query}"
+
+Available Tables:
+{tables_summary}
+
+Return ONLY a JSON array of table names, ordered by relevance. Example:
+["books", "authors", "inventory"]
+
+Think step by step:
+1. What entities does the query mention? (e.g., "Harry Potter book" → books, titles, authors)
+2. What operations are implied? (e.g., "do you have" → inventory, availability)
+3. Which tables likely contain this data?
+
+JSON Response:

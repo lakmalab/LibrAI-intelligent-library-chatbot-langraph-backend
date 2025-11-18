@@ -24,5 +24,5 @@ class AgentState(TypedDict):
     awaiting_human_approval: Optional[bool]
     pending_review: Optional[Dict[str, Any]]
     rejection_reason: Optional[str]
-
+    can_answer_from_db:bool
     schema_info: str

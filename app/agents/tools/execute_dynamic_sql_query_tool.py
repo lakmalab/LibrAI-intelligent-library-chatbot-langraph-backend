@@ -9,7 +9,6 @@ from app.db.dbconnection import get_db
 
 _db_session: DBSession = None
 
-
 def set_db_session(db: DBSession):
     global _db_session
     _db_session = db

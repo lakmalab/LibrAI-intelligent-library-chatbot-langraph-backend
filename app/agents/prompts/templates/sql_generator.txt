@@ -5,7 +5,7 @@ Database Schema: {db_schema}
 User Query: {query}
 
 IMPORTANT RULES:
-1. Generate ONLY valid Mysql/SQLAlchemy compatible SQL
+1. Generate ONLY valid Mysql compatible SQL
 2. Use proper JOINs when accessing related tables
 3. Always use table aliases for clarity
 4. Include appropriate WHERE clauses for filtering

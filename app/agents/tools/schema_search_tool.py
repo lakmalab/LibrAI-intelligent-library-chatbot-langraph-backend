@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import Field
 import json
 
+from app.agents.prompts.registry import PROMPTS
 from app.db.dbconnection import get_db
 from app.agents.llm_provider import get_llm
 from app.enums.ai_model import AiModel
@@ -52,23 +53,9 @@ class AgenticSchemaSearchTool(BaseTool):
             for t in table_metadata[:100]
         ])
 
-        prompt = f"""You are a database schema expert. Given a user query and list of available tables, 
-identify the 3-5 most relevant tables that would contain the data needed to answer the query.
-
-User Query: "{query}"
-
-Available Tables:
-{tables_summary}
-
-Return ONLY a JSON array of table names, ordered by relevance. Example:
-["books", "authors", "inventory"]
-
-Think step by step:
-1. What entities does the query mention? (e.g., "Harry Potter book" → books, titles, authors)
-2. What operations are implied? (e.g., "do you have" → inventory, availability)
-3. Which tables likely contain this data?
-
-JSON Response:"""
+        prompt = PROMPTS.get("schema_search").format(
+            query=query,tables_summary=tables_summary
+        )
 
         llm = get_llm(model=AiModel.GPT_5_NANO, temperature=0)
         response = llm.invoke(prompt)
@@ -119,7 +106,7 @@ JSON Response:"""
                     "foreign_keys": foreign_keys,
                     "indexes": indexes,
                     "sample_rows": len(sample_data),
-                    "sample_data": [dict(row._mapping) for row in sample_data[:2]]  # Just 2 samples
+                    "sample_data": [dict(row._mapping) for row in sample_data[:2]]
                 })
             except Exception as e:
                 logger.error(f"Error fetching schema for {table}: {e}")
@@ -150,7 +137,7 @@ JSON Response:"""
                 "total_tables_in_db": len(table_metadata),
                 "tables_analyzed": len(relevant_tables),
                 "schema": detailed_schema,
-
+                "can_answer_query": True,
             }
 
         except Exception as e:

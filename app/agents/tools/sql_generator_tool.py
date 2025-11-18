@@ -27,12 +27,12 @@ class SQLGeneratorTool(BaseTool):
     def _run(self, user_query: str, schema_info: str, messages: List = None, **kwargs) -> str:
         logger.info(f"[sql_generator_tool] called")
 
-        # Use provided parameters instead of accessing state
         conversation_history = messages or []
         user_message = user_query
         db_schema = str(schema_info)
+        logger.info(f"[sql_generator_tool] result: {db_schema}")
 
-        system_prompt = PROMPTS.get("sql_generator", query=user_message, db_schema=db_schema)
+        system_prompt = PROMPTS.get("sql_generator").format( query=user_message, db_schema=db_schema)
         logger.info(f"[SQLGeneratorTool system_prompt] : {system_prompt}")
         messages = [SystemMessage(content=system_prompt), *conversation_history]
 
