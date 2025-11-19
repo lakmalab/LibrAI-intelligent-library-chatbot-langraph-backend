@@ -246,9 +246,9 @@ class ChatService:
         }
 
         if modified_email:
-            update_values["email"] = modified_email
+            update_values["user_email"] = modified_email
         if modified_password:
-            update_values["password"] = modified_password
+            update_values["user_password"] = modified_password
 
         await self.agent.aupdate_state(thread_config, update_values)
 

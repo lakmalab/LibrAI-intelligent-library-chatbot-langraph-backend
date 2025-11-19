@@ -28,3 +28,5 @@ class AgentState(TypedDict):
     credentials_reviewed: bool
     user_email:str
     user_password: str
+    user_credentials_checked:bool
+    credentials_valid:bool

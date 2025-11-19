@@ -15,8 +15,15 @@ def get_table_info_node(state: AgentState) -> Dict[str, Any]:
     user_query = state.get("user_query", "")
     conversation_history = state.get("messages", [])
 
+    user_email = state.get("user_email", "").strip()
+    user_password = state.get("user_password", "").strip()
+    logger.info(f"Schema search complete: can_answer={user_email}")
     tool = AgenticSchemaSearchTool()
-    schema_result = tool.run(user_query)
+    schema_result = tool.run({
+        "query": user_query,
+        "user_email": user_email,
+        "user_password": user_password,
+    })
 
     can_answer = schema_result.get("can_answer_query", False)
     need_to_interrupt = schema_result.get("need_to_interrupt", False)
@@ -30,6 +37,7 @@ def get_table_info_node(state: AgentState) -> Dict[str, Any]:
             "messages": conversation_history,
             "schema_info": schema_result,
             "can_answer_from_db": False,
+            "need_to_interrupt": need_to_interrupt,
         }
 
     return {

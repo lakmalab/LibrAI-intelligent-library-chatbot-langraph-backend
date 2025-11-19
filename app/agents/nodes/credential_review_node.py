@@ -14,7 +14,7 @@ logger = get_logger("credential_review_node")
 def credential_review_node(state: AgentState) -> Dict[str, Any]:
     logger.info("Credential review node: Preparing credential summary for human approval")
 
-    email = state.get("user_password", "lakmal")
+    email = state.get("user_email", "lakmal")
     password = state.get("user_password", "12345")
     conversation_history = state.get("messages", [])
     user_message = state.get("user_query", "")
@@ -44,7 +44,7 @@ def credential_review_node(state: AgentState) -> Dict[str, Any]:
     return {
         "pending_review": review_message,
         "awaiting_credential_approval": True,
-        "email": email,
-        "password": password,
+        "user_email": email,
+        "user_password": password,
         "credentials_reviewed": False
     }

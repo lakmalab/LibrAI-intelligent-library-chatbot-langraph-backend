@@ -23,8 +23,6 @@ def generate_sql_query_node(state: AgentState) -> Dict[str, Any]:
     if isinstance(result, dict):
         result = json.dumps(result)
 
-
-
     new_state = state.copy()
     new_state.update({
         "sql_query": result

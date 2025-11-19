@@ -5,6 +5,7 @@ from app.agents.nodes.credential_review_node import credential_review_node
 from app.agents.nodes.execute_sql_query_node import execute_sql_query_node
 from app.agents.nodes.generate_sql_query_node import generate_sql_query_node
 from app.agents.nodes.get_db_info_node import get_table_info_node
+from app.agents.nodes.verify_credential_node import check_user_credentials_node
 
 from app.agents.state import AgentState
 from app.agents.tools.execute_dynamic_sql_query_tool import QueryExecutorTool
@@ -32,6 +33,14 @@ def build_graph():
     def route_after_credential_review(state: AgentState) -> str:
         if state.get("credentials_approved", False) and state.get("credentials_reviewed", False):
             logger.info("Credentials approved, proceeding to next step")
+            return routes.CHECK_USER_CREDENTIALS_NODE
+        else:
+            logger.info("Credentials not approved, returning to conversation")
+            return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
+
+    def route_after_check_user_credendials_review(state: AgentState) -> str:
+        if state.get("credentials_valid", False):
+            logger.info("Credentials approved, proceeding to next step")
             return routes.GENERATE_SQL_QUERY_NODE
         else:
             logger.info("Credentials not approved, returning to conversation")
@@ -42,6 +51,8 @@ def build_graph():
     workflow.add_node(routes.HUMAN_REVIEW_NODE, credential_review_node)
     workflow.add_node(routes.GENERATE_SQL_QUERY_NODE, generate_sql_query_node)
     workflow.add_node(routes.EXECUTE_SQL_QUERY_NODE, execute_sql_query_node)
+    workflow.add_node(routes.CHECK_USER_CREDENTIALS_NODE, check_user_credentials_node)
+
 
     workflow.set_entry_point(routes.GET_TABLE_INFO_NODE)
 
@@ -61,6 +72,14 @@ def build_graph():
     workflow.add_conditional_edges(
         routes.HUMAN_REVIEW_NODE,
         route_after_credential_review,
+        {
+            routes.CHECK_USER_CREDENTIALS_NODE: routes.CHECK_USER_CREDENTIALS_NODE,
+            routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE: routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
+        }
+    )
+    workflow.add_conditional_edges(
+        routes.CHECK_USER_CREDENTIALS_NODE,
+        route_after_check_user_credendials_review,
         {
             routes.GENERATE_SQL_QUERY_NODE: routes.GENERATE_SQL_QUERY_NODE,
             routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE: routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE

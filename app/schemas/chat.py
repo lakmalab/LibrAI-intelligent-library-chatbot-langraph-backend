@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from pydantic import BaseModel, Field,validator
 from typing import Optional, List
 from datetime import datetime
@@ -44,7 +44,7 @@ class CredentialApprovalRequest(BaseModel):
     session_id: str
     conversation_id: int
     approved: bool
-    modified_email: str = None
+    modified_email: EmailStr = None
     modified_password: str = None
 
 
