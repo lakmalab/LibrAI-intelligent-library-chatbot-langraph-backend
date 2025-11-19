@@ -11,40 +11,45 @@ from app.enums import AiModel
 logger = get_logger("credential_review_node")
 
 
-def credential_review_node(state: AgentState) -> Dict[str, Any]:
-    logger.info("Credential review node: Preparing credential summary for human approval")
+class CredentialReviewNode:
+    def __init__(self, *args, **kwargs):
+        pass
 
-    email = state.get("user_email", "lakmal")
-    password = state.get("user_password", "12345")
-    conversation_history = state.get("messages", [])
-    user_message = state.get("user_query", "")
+    def __call__(self, state: AgentState) -> Dict[str, Any]:
+        logger.info("Credential review node: Preparing credential summary for human approval")
 
-    system_prompt = PROMPTS.get("credential_review").format(
-        email=email,
-        password=password,
-        user_query=user_message
-    )
+        email = state.get("user_email", "lakmal")
+        password = state.get("user_password", "12345")
+        conversation_history = state.get("messages", [])
+        user_message = state.get("user_query", "")
 
-    llm = get_llm(temperature=0, model=AiModel.GPT_5_NANO)
+        system_prompt = PROMPTS.get("credential_review").format(
+            email=email,
+            password=password,
+            user_query=user_message
+        )
 
-    messages = [
-        SystemMessage(content=system_prompt),
-        *conversation_history
-    ]
+        llm = get_llm(temperature=0, model=AiModel.GPT_5_NANO)
 
-    response = llm.invoke(messages)
+        messages = [
+            SystemMessage(content=system_prompt),
+            *conversation_history
+        ]
 
-    review_message = {
-        "summary": response.content,
-        "status": "pending_credential_confirmation",
-        "message": "Please confirm the email and password before continuing:",
-        "requires_approval": True
-    }
-    logger.info(f"review_message:{review_message}", )
-    return {
-        "pending_review": review_message,
-        "awaiting_credential_approval": True,
-        "user_email": email,
-        "user_password": password,
-        "credentials_reviewed": False
-    }
+        response = llm.invoke(messages)
+
+        review_message = {
+            "summary": response.content,
+            "status": "pending_credential_confirmation",
+            "message": "Please confirm the email and password before continuing:",
+            "requires_approval": True
+        }
+        logger.info(f"review_message:{review_message}", )
+        return {
+            "pending_review": review_message,
+            "awaiting_credential_approval": True,
+            "user_email": email,
+            "user_password": password,
+            "credentials_reviewed": False,
+            "current_node": "CredentialReviewNode"
+        }
