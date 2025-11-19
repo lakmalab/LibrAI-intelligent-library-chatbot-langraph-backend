@@ -3,25 +3,39 @@ config:
   flowchart:
     curve: linear
 ---
-graph TD;
-    __start__([<p>__start__</p>]):::first
+graph TD
+    %% --- Nodes ---
+    __start__([Start]):::first
     generate_conversational_response_node(generate_conversational_response_node)
     get_table_info_node(get_table_info_node)
-    credential_review_node(credential_review_node<hr/><small><em>__interrupt = after</em></small>)
+
+    %% Quoted the HTML label below to prevent parse errors
+    credential_review_node("credential_review_node<hr/><small><em>__interrupt = after</em></small>")
+
     generate_sql_query_node(generate_sql_query_node)
     execute_sql_query_node(execute_sql_query_node)
-    __end__([<p>__end__</p>]):::last
+    check_user_credentials_node(check_user_credentials_node)
+    __end__([End]):::last
 
+    %% --- Edges ---
     __start__ --> get_table_info_node
+
+    check_user_credentials_node -. "routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE" .-> generate_conversational_response_node
+    check_user_credentials_node -. "routes.GENERATE_SQL_QUERY_NODE" .-> generate_sql_query_node
+
+    credential_review_node -. "routes.CHECK_USER_CREDENTIALS_NODE" .-> check_user_credentials_node
+    credential_review_node -. "routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE" .-> generate_conversational_response_node
+
+    execute_sql_query_node --> generate_conversational_response_node
+    generate_sql_query_node --> execute_sql_query_node
+
     get_table_info_node -. "intents.HITL" .-> credential_review_node
     get_table_info_node -. "intents.GENERAL" .-> generate_conversational_response_node
     get_table_info_node -. "intents.SQL_QUERY" .-> generate_sql_query_node
-    credential_review_node -. "routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE" .-> generate_conversational_response_node
-    credential_review_node -. "routes.GENERATE_SQL_QUERY_NODE" .-> generate_sql_query_node
-    generate_sql_query_node --> execute_sql_query_node
-    execute_sql_query_node --> generate_conversational_response_node
+
     generate_conversational_response_node --> __end__
 
+    %% --- Styling ---
     classDef default fill:#f2f0ff,line-height:1.2
     classDef first fill-opacity:0
     classDef last fill:#bfb6fc

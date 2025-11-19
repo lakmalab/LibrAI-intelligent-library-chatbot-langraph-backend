@@ -5,7 +5,7 @@ A **FastAPI-based Langraph intelligent chatbot** for a national library chain th
 ## 🧠 How It Works
 
 **Example Flow**
-![Agent Workflow](graph.jfif)
+![Agent Workflow](graph.jpg)
 
 ### 🧩 Prerequisites
 
