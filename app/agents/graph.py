@@ -1,11 +1,12 @@
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import InMemorySaver
-from app.agents.nodes.conversation_node import generate_conversational_response
-from app.agents.nodes.credential_review_node import credential_review_node
-from app.agents.nodes.execute_sql_query_node import execute_sql_query_node
-from app.agents.nodes.generate_sql_query_node import generate_sql_query_node
-from app.agents.nodes.get_db_info_node import get_table_info_node
-from app.agents.nodes.verify_credential_node import check_user_credentials_node
+
+from app.agents.nodes.conversation_node import GenerateConversationalResponseNode
+from app.agents.nodes.credential_review_node import CredentialReviewNode
+from app.agents.nodes.execute_sql_query_node import ExecuteSQLQueryNode
+from app.agents.nodes.generate_sql_query_node import GenerateSQLQueryNode
+from app.agents.nodes.get_db_info_node import GetTableInfoNode
+from app.agents.nodes.verify_credential_node import CheckUserCredentialsNode
 
 from app.agents.state import AgentState
 from app.agents.tools.execute_dynamic_sql_query_tool import QueryExecutorTool
@@ -27,6 +28,7 @@ def build_graph():
             logger.info("ROUTING TO GENERATE_SQL_QUERY_NODE")
             return intents.SQL_QUERY
         else:
+            logger.info(f"ROUTING TO {state.get("need_to_interrupt")}")
             logger.info("ROUTING TO GENERATE_CONVERSATIONAL_RESPONSE_NODE")
             return intents.GENERAL
 
@@ -46,12 +48,12 @@ def build_graph():
             logger.info("Credentials not approved, returning to conversation")
             return routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE
 
-    workflow.add_node(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE, generate_conversational_response)
-    workflow.add_node(routes.GET_TABLE_INFO_NODE, get_table_info_node)
-    workflow.add_node(routes.HUMAN_REVIEW_NODE, credential_review_node)
-    workflow.add_node(routes.GENERATE_SQL_QUERY_NODE, generate_sql_query_node)
-    workflow.add_node(routes.EXECUTE_SQL_QUERY_NODE, execute_sql_query_node)
-    workflow.add_node(routes.CHECK_USER_CREDENTIALS_NODE, check_user_credentials_node)
+    workflow.add_node(routes.GENERATE_CONVERSATIONAL_RESPONSE_NODE, GenerateConversationalResponseNode())
+    workflow.add_node(routes.GET_TABLE_INFO_NODE, GetTableInfoNode())
+    workflow.add_node(routes.HUMAN_REVIEW_NODE, CredentialReviewNode())
+    workflow.add_node(routes.GENERATE_SQL_QUERY_NODE, GenerateSQLQueryNode())
+    workflow.add_node(routes.EXECUTE_SQL_QUERY_NODE, ExecuteSQLQueryNode())
+    workflow.add_node(routes.CHECK_USER_CREDENTIALS_NODE, CheckUserCredentialsNode())
 
 
     workflow.set_entry_point(routes.GET_TABLE_INFO_NODE)
