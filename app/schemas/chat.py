@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from pydantic import BaseModel, Field,validator
 from typing import Optional, List
 from datetime import datetime
@@ -40,11 +40,13 @@ class ChatMessageResponse(BaseModel):
     session_id: Optional[str] = None
     approved: Optional[bool] = None
 
-class SQLApprovalRequest(BaseModel):
+class CredentialApprovalRequest(BaseModel):
     session_id: str
     conversation_id: int
     approved: bool
-    modified_query: str = None
+    modified_email: EmailStr = None
+    modified_password: str = None
+
 
 class ConversationResponse(BaseModel):
     id: int
