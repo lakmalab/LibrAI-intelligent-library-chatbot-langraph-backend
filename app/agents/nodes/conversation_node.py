@@ -33,7 +33,8 @@ class GenerateConversationalResponseNode:
             )
             messages = [
                 SystemMessage(content=system_prompt),
-                *conversation_history
+                *conversation_history,
+                HumanMessage(content=user_message)
             ]
 
             response = llm.invoke(messages)
@@ -49,7 +50,8 @@ class GenerateConversationalResponseNode:
                 )
                 messages = [
                     SystemMessage(content=system_prompt),
-                    *conversation_history
+                    *conversation_history,
+                    HumanMessage(content=user_message)
                 ]
 
                 response = llm.invoke(messages)
@@ -68,7 +70,8 @@ class GenerateConversationalResponseNode:
 
                 messages = [
                     SystemMessage(content=system_prompt),
-                    *conversation_history
+                    *conversation_history,
+                    HumanMessage(content=user_message)
                 ]
                 logger.error(f"sql_result_natural chat response: {messages}")
                 response = llm.invoke(messages)
@@ -82,7 +85,8 @@ class GenerateConversationalResponseNode:
             )
             messages = [
                 SystemMessage(content=system_prompt),
-                *conversation_history
+                *conversation_history,
+                HumanMessage(content=user_message)
             ]
 
             response = llm.invoke(messages)

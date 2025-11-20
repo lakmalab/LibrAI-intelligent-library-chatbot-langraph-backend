@@ -1,7 +1,7 @@
 import json
 from typing import Dict, Any, List
 
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.tools import BaseTool
 
 from app.agents.llm_provider import get_llm
@@ -30,11 +30,16 @@ class SQLGeneratorTool(BaseTool):
         conversation_history = messages or []
         user_message = user_query
         db_schema = str(schema_info)
-        logger.info(f"[sql_generator_tool] result: {db_schema}")
+        #logger.info(f"[sql_generator_tool] result: {db_schema}")
 
         system_prompt = PROMPTS.get("sql_generator").format( query=user_message, db_schema=db_schema)
         logger.info(f"[SQLGeneratorTool system_prompt] : {system_prompt}")
-        messages = [SystemMessage(content=system_prompt), *conversation_history]
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            *conversation_history,
+            HumanMessage(content=user_query)
+        ]
 
         response = self.llm.invoke(messages)
         logger.info(f"[SQLGeneratorTool] result: {response}")
