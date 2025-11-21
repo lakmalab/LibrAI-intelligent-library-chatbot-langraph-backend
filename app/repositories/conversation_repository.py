@@ -14,6 +14,46 @@ class ConversationRepository:
             .first()
         )
 
+    def get_or_create_conversation(
+            self,
+            session_id: str,
+            conversation_id: Optional[int] = None,
+            title: str = "New Conversation"
+    ) -> Conversation:
+
+        if conversation_id is not None:
+            convo = (
+                self.db.query(Conversation)
+                .filter(
+                    Conversation.id == conversation_id,
+                    Conversation.session_id == session_id
+                )
+                .first()
+            )
+            if convo:
+                return convo
+
+        latest = (
+            self.db.query(Conversation)
+            .filter(Conversation.session_id == session_id)
+            .order_by(Conversation.updated_at.desc())
+            .first()
+        )
+
+        if latest:
+            return latest
+
+        new_conversation = Conversation(
+            session_id=session_id,
+            title=title
+        )
+
+        self.db.add(new_conversation)
+        self.db.commit()
+        self.db.refresh(new_conversation)
+
+        return new_conversation
+
     def create_conversation(self, conversation_data: dict) -> Conversation:
         new_conversation = Conversation(**conversation_data)
         self.db.add(new_conversation)
@@ -25,6 +65,7 @@ class ConversationRepository:
         return (
             self.db.query(Conversation)
             .filter(Conversation.session_id == session_id)
+            .order_by(Conversation.updated_at.desc())
             .all()
         )
 

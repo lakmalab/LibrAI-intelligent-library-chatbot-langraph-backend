@@ -1,12 +1,27 @@
-from pydantic import BaseModel
-from pydantic import BaseModel, Field
-from typing import Optional
+from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import BaseModel, Field,validator
+from typing import Optional, List
 from datetime import datetime
+import re
+
+from app.enums import RoleType
+
 
 class ChatMessageRequest(BaseModel):
     message: str = Field(..., min_length=1, description="User message content")
     session_id: str = Field(..., description="Unique session identifier")
     conversation_id: Optional[int] = Field(None, description="Conversation ID if continuing existing conversation")
+
+    @field_validator('message')
+    def validate_message_content(cls, v):
+        v = v.strip()
+        if not v:
+            raise ValueError('Message cannot be empty or just whitespace')
+
+        if re.match(r'^[\d\s\W]+$', v):
+            raise ValueError('Message must contain meaningful text content')
+
+        return v
 
     class Config:
         json_schema_extra = {
@@ -17,13 +32,52 @@ class ChatMessageRequest(BaseModel):
             }
         }
 
-
-
 class ChatMessageResponse(BaseModel):
     conversation_id: int
     response: str
     intent: Optional[str] = None
     metadata: dict = Field(default_factory=dict)
+    session_id: Optional[str] = None
+    approved: Optional[bool] = None
+
+class CredentialApprovalRequest(BaseModel):
+    session_id: str
+    conversation_id: int
+    approved: bool
+    modified_email: EmailStr = None
+    modified_password: str = None
 
 
+class ConversationResponse(BaseModel):
+    id: int
+    session_id: str
+    scheme_id: Optional[int]
+    title: Optional[str]
+    created_at: datetime
 
+    class Config:
+        from_attributes = True
+
+
+class ConversationItem(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+class ConversationListResponse(BaseModel):
+    session_id: str
+    conversations: List[ConversationItem]
+
+class MessageHistory(BaseModel):
+    id: int
+    role: RoleType
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ChatHistoryResponse(BaseModel):
+    conversation_id: int
+    messages: List[MessageHistory]

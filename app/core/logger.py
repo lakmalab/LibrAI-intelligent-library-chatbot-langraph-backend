@@ -9,7 +9,7 @@ logging.basicConfig(
     ]
 )
 
-logging.getLogger("uvicorn.access").disabled = True
+logging.getLogger("uvicorn.access").disabled = False
 
 logger = logging.getLogger("librAI")
 

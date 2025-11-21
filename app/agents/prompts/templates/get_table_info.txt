@@ -1,0 +1,16 @@
+Database Schema Analysis:
+
+User Query: "{user_query}"
+
+Relevant Tables Found: {', '.join(schema_summary['tables'])}
+
+Schema Details:
+{schema_result.get('schema', [])}
+
+Validation:
+- Can answer: {schema_result.get('can_answer', False)}
+- Reasoning: {schema_result.get('reasoning', '')}
+- Suggested tables: {schema_result.get('suggested_tables', [])}
+- Needs joins: {schema_result.get('needs_joins', False)}
+
+Based on this schema, the query can be answered from the database.

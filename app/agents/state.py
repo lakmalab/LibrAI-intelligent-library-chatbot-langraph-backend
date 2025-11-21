@@ -15,6 +15,18 @@ class AgentState(TypedDict):
     intent: intents
 
     response: str
-
-    db_schema: str
+    tool_results: str
     sql_query:str
+
+    generated_sql_query: Optional[str]
+    pending_review: Optional[Dict[str, Any]]
+    rejection_reason: Optional[str]
+    can_answer_from_db:bool
+    schema_info: str
+    need_to_interrupt: bool
+    credentials_approved: bool
+    credentials_reviewed: bool
+    user_email:str
+    user_password: str
+    user_credentials_checked:bool
+    credentials_valid:bool

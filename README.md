@@ -1,10 +1,11 @@
 # National Library Chain Chatbot
 
-A **FastAPI-based intelligent chatbot** for a national library chain that integrates:
+A **FastAPI-based Langraph intelligent chatbot** for a national library chain that integrates:
 
 ## 🧠 How It Works
 
 **Example Flow**
+![Agent Workflow](graph.jpg)
 
 ### 🧩 Prerequisites
 
